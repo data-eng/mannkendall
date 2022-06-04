@@ -60,6 +60,21 @@ def dt_to_s(time_deltas):
 
     return f(time_deltas)
 
+def days_to_s( days ):
+    """ A convenience function that converts an array of MATLAB times into an array of
+    day floats corresponding to the total_seconds() of each elements.
+
+    Args:
+        time_deltas (ndarray of float): array of timestamps
+
+    Returns:
+        ndaray of float: the same array with all elements converted to total_seconds().
+
+    """
+
+    f = np.vectorize(lambda x: x*86400)
+    return f(days)
+
 def nb_tie(data, resolution):
     """ Compute the number of data point considered to be equivalent (and to be treated as "ties").
 

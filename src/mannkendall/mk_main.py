@@ -67,12 +67,12 @@ def prob_3pw(p_pw, p_tfpw_y, alpha_mk):
     return (p, ss)
 
 
-def compute_mk_stat(obs_dts, obs, resolution, alpha_mk=95, alpha_cl=90):
+def compute_mk_stat(obs, resolution, alpha_mk=95, alpha_cl=90):
     """ Compute all the components for the MK statistics.
 
     Args:
-        obs_dts (ndarray of datetime.datetime): a list of observation datetimes.
-        obs (ndarray of floats): the data array. Must be 1-D.
+        obs (2D ndarray of floats): the data array. The first column is
+        MATLAB timestamps and the second column is the observations.
         resolution (float): delta value below which two measurements are considered equivalent.
         alpha_mk (float, optional): confidence level for the Mann-Kendall test in %. Defaults to 95.
         alpha_cl (float, optional): confidence level for the Sen's slope in %. Defaults to 90.
@@ -91,16 +91,23 @@ def compute_mk_stat(obs_dts, obs, resolution, alpha_mk=95, alpha_cl=90):
 
     result = {}
 
-    t = mkt.nb_tie(obs, resolution)
-    (s, n) = mks.s_test(obs, obs_dts)
-    vari = mkt.kendall_var(obs, t, n)
+    ## temp hack, until float timestamps are pushed all the way down
+    tt = []
+    for t in obs[0,:]:
+        tt.append( mkt.mat2datetime(t) ) 
+    obs_dts = np.array(tt)
+
+    t = mkt.nb_tie(obs[1,:], resolution)
+    (s, n) = mks.s_test(obs[1,:], obs_dts)
+    vari = mkt.kendall_var(obs[1,:], t, n)
     z = mks.std_normal_var(s, vari)
 
-    if len(obs) > 10:
+    (cols,rows) = obs.shape
+    if rows > 10:
         result['p'] = 2 * (1 - spstats.norm.cdf(np.abs(z), loc=0, scale=1))
     else:
         prob_mk_n = mkh.PROB_MK_N
-        result['p'] = prob_mk_n[np.abs(s), len(obs)] # TODO: np.abs(s) + 1 ?
+        result['p'] = prob_mk_n[np.abs(s), cols] # TODO: np.abs(s) + 1 ?
 
     # Determine the statistic significance
     if result['p'] <= 1- alpha_mk/100:
@@ -108,7 +115,7 @@ def compute_mk_stat(obs_dts, obs, resolution, alpha_mk=95, alpha_cl=90):
     else:
         result['ss'] = 0
 
-    (slope, slope_min, slope_max) = mks.sen_slope(obs_dts, obs, vari, alpha_cl=alpha_cl)
+    (slope, slope_min, slope_max) = mks.sen_slope(obs, vari, alpha_cl=alpha_cl)
     # Transform the slop in 1/yr.
     result['slope'] = slope * 3600 * 24 * 365.25
     result['ucl'] = slope_max * 3600 * 24 *365.25

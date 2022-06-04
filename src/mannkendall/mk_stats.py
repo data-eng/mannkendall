@@ -51,7 +51,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope(obs_dts, obs, k_var, alpha_cl=90.):
+def sen_slope( obs, k_var, alpha_cl=90. ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval::
@@ -62,8 +62,8 @@ def sen_slope(obs_dts, obs, k_var, alpha_cl=90.):
     point is small, such as for yearly averages for a 10 year trend.
 
     Args:
-        obs_dts (ndarray of datetime.datetime): an array of observation times. Must be 1-D.
-        obs (ndarray of floats): the data array. Must be 1-D.
+        obs (2D ndarray of floats): the data array. The first column is
+        MATLAB timestamps and the second column is the observations.
         k_var (float): Kendall variance, computed with Kendall_var.
         confidence (float, optional): the desired confidence limit, in %. Defaults to 90.
 
@@ -83,17 +83,17 @@ def sen_slope(obs_dts, obs, k_var, alpha_cl=90.):
     if not isinstance(k_var, (int, float)):
         raise Exception('Ouch ! The variance must be of type float, not: %s' % (type(k_var)))
 
-    l = len(obs)
+    (cols,rows) = obs.shape
+    if cols != 2:
+        raise Exception( "There must be two columns in obs" )
+        
 
     # Let's compute the slope for all the possible pairs.
-    d = np.array([item for i in range(0, l-1)
-                  for item in list((obs[i+1:l] - obs[i])/mkt.dt_to_s(obs_dts[i+1:l] - obs_dts[i]))])
-
-    # Let's only keep the values that are valid
-    d = d[~np.isnan(d)]
+    d = np.array([item for i in range(0, rows-1)
+                  for item in list((obs[1,i+1:rows] - obs[1,i])/mkt.days_to_s(obs[0,i+1:rows] - obs[0,i]))])
 
     # Let's compute the median slope
-    slope = np.nanmedian(d)
+    slope = np.nanmedian( d, overwrite_input=True )
 
     # Apply the confidence limits
     cconf = -norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
