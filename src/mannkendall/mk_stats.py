@@ -94,9 +94,16 @@ def sen_slope( obs, k_var, alpha_cl=90. ):
 
     # Only keep valid values
     d = d[~np.isnan(d)]
+    # Sort
+    # This will get us the median, and is
+    # also needed for interpolation below
+    d.sort()
 
-    # Cmpute the median slope
-    slope = np.median( d, overwrite_input=True )
+    l = len(d)
+    if l % 2 == 1:
+        slope = d[(l-1)//2]
+    else:
+        slope = (d[l//2-1]+d[l//2])/2
 
     # Apply the confidence limits
     cconf = -norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
@@ -107,9 +114,8 @@ def sen_slope( obs, k_var, alpha_cl=90. ):
     m_2 = (0.5 * (len(d) + cconf)) - 1
 
     # Let's setup a quick interpolation scheme to get the best possible confidence limits
-    f = interp1d(np.arange(0, len(d), 1), np.sort(d), kind='linear',
-                 fill_value=(np.sort(d)[0], np.sort(d)[-1]),
-                 assume_sorted=True, bounds_error=False)
+    f = interp1d(np.arange(0, l, 1), d, kind='linear',
+                 fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
 
     lcl = f(m_1)
     ucl = f(m_2)
