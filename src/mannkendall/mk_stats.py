@@ -92,8 +92,11 @@ def sen_slope( obs, k_var, alpha_cl=90. ):
     d = np.array([item for i in range(0, rows-1)
                   for item in list((obs[1,i+1:rows] - obs[1,i])/mkt.days_to_s(obs[0,i+1:rows] - obs[0,i]))])
 
-    # Let's compute the median slope
-    slope = np.nanmedian( d, overwrite_input=True )
+    # Only keep valid values
+    d = d[~np.isnan(d)]
+
+    # Cmpute the median slope
+    slope = np.median( d, overwrite_input=True )
 
     # Apply the confidence limits
     cconf = -norm.ppf((1-alpha_cl/100)/2) * k_var**0.5

@@ -54,8 +54,6 @@ def test_compute_mk_stat( basename ):
     assert vari - good_results[0][6] < 1E-10
     assert z    - good_results[0][7] < 1E-10
 
-    return
-
     w = numpy.loadtxt( basename + ".pw_cor.csv" )
     dd = numpy.stack( (d[0,:],w), axis=0 )
     (result, s, vari, z) = mk.compute_mk_stat( dd, 0.02 )
@@ -68,9 +66,41 @@ def test_compute_mk_stat( basename ):
     assert vari - good_results[1][6] < 1E-10
     assert z    - good_results[1][7] < 1E-10
 
-    #res = mk.compute_mk_stat( numpy.array(tt), w["tfpw_y"], 0.02 )
-    #res = mk.compute_mk_stat( numpy.array(tt), w["tfpw_ws"], 0.02 )
-    #res = mk.compute_mk_stat( numpy.array(tt), w["vctfpw"], 0.02 )
+    w = numpy.loadtxt( basename + ".tfpw_y.csv" )
+    dd = numpy.stack( (d[0,:],w), axis=0 )
+    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.02 )
+    assert result["p"]    - good_results[2][0] < 1E-10
+    assert result["ss"]   - good_results[2][1] == 0
+    assert result["slope"]- good_results[2][2] < 1E-10
+    assert result["ucl"]  - good_results[2][3] < 1E-10
+    assert result["lcl"]  - good_results[2][4] < 1E-10
+    assert s    - good_results[2][5] < 1E-2
+    assert vari - good_results[2][6] < 1E-10
+    assert z    - good_results[2][7] < 1E-10
+
+    w = numpy.loadtxt( basename + ".tfpw_ws.csv" )
+    dd = numpy.stack( (d[0,:],w), axis=0 )
+    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.02 )
+    assert result["p"]    - good_results[3][0] < 1E-10
+    assert result["ss"]   - good_results[3][1] == 0
+    assert result["slope"]- good_results[3][2] < 1E-10
+    assert result["ucl"]  - good_results[3][3] < 1E-10
+    assert result["lcl"]  - good_results[3][4] < 1E-10
+    assert s    - good_results[3][5] < 1E-2
+    assert vari - good_results[3][6] < 1E-10
+    assert z    - good_results[3][7] < 1E-10
+
+    w = numpy.loadtxt( basename + ".vctfpw.csv" )
+    dd = numpy.stack( (d[0,:],w), axis=0 )
+    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.02 )
+    assert result["p"]    - good_results[4][0] < 1E-10
+    assert result["ss"]   - good_results[4][1] == 0
+    assert result["slope"]- good_results[4][2] < 1E-10
+    assert result["ucl"]  - good_results[4][3] < 1E-10
+    assert result["lcl"]  - good_results[4][4] < 1E-10
+    assert s    - good_results[4][5] < 1E-2
+    assert vari - good_results[4][6] < 1E-10
+    assert z    - good_results[4][7] < 1E-10
 
 
 test_compute_mk_stat( sys.argv[1] )
