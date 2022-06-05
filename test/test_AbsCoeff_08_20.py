@@ -137,5 +137,4 @@ def test_compute_mk_stat( basename ):
 
 
 test_prewhite( sys.argv[1] )
-#test_compute_mk_stat( sys.argv[1] )
-
+test_compute_mk_stat( sys.argv[1] )
