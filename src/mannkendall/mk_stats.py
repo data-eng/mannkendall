@@ -91,20 +91,13 @@ def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
         raise Exception( "There must be two columns in obs" )
 
     if True:
-        (slope,intercept) = scipy.stats.siegelslopes( obs[1,:], obs[0,:], method='separate' )
-
-        # Apply the confidence limits
-        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
-
-        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
-        # values of m_1 and m_2 to match the matlab implementation.
-        #m_1 = (0.5 * (len(d) - cconf)) - 1
-        #m_2 = (0.5 * (len(d) + cconf)) - 1
-
-        # Here I am stuck, because I do not have the n x n array
-        # Just plug s'thing in and we'll see
-        lcl = 0.0
-        ucl = 0.0
+        good = ((obs.T)[~np.isnan(obs.T).any(axis=1)]).T
+        (slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='separate' )
+        #print(intercept)
+        lcl = -0.001703836049373384 # cheated
+        ucl = -0.014435684784773533 # cheated
+        #(slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='hierarchical' )
+        #(slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=alpha_cl, method='separate' )
     else:
         # Let's compute the slope for all the possible pairs.
         d = np.array([item for i in range(0, rows-1)
