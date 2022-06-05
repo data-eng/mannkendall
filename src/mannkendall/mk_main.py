@@ -91,12 +91,6 @@ def compute_mk_stat(obs, resolution, alpha_mk=95, alpha_cl=90):
 
     result = {}
 
-    ## temp hack, until float timestamps are pushed all the way down
-    tt = []
-    for t in obs[0,:]:
-        tt.append( mkt.mat2datetime(t) ) 
-    obs_dts = np.array(tt)
-
     t = mkt.nb_tie(obs[1,:], resolution)
     (s, n) = mks.s_test(obs)
     vari = mkt.kendall_var(obs[1,:], t, n)
@@ -116,7 +110,7 @@ def compute_mk_stat(obs, resolution, alpha_mk=95, alpha_cl=90):
         result['ss'] = 0
 
     (slope, slope_min, slope_max) = mks.sen_slope(obs, vari, alpha_cl=alpha_cl)
-    # Transform the slop in 1/yr.
+    # Transform slope in 1/yr.
     result['slope'] = slope * 3600 * 24 * 365.25
     result['ucl'] = slope_max * 3600 * 24 *365.25
     result['lcl'] = slope_min * 3600 * 24 * 365.25
