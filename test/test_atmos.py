@@ -24,31 +24,31 @@ def test_prewhite( basename ):
     diff = my_whites["pw"] - numpy.loadtxt( basename + ".pw.csv" )
     mse = numpy.nansum(numpy.square(diff)) / len(diff)
     print( "pw: "+str(mse)+" "+str(numpy.nanmean(my_whites["pw"])) )
-    numpy.savetxt( "pw", w["pw"] )
+    numpy.savetxt( basename+".pw", my_whites["pw"] )
     #assert numpy.nansum(numpy.square(diff)) < 1E-10
 
     diff = my_whites["pw_cor"] - numpy.loadtxt( basename + ".pw_cor.csv" )
     mse = numpy.nansum(numpy.square(diff)) / len(diff)
     print( "pw_corr: "+str(mse)+" "+str(numpy.nanmean(my_whites["pw_cor"])) )
-    numpy.savetxt( "pw_cor", w["pw_cor"] )
+    numpy.savetxt( basename+".pw_cor", my_whites["pw_cor"] )
     #assert numpy.nansum(numpy.square(diff)) < 1E-10
 
     diff = my_whites["tfpw_y"] - numpy.loadtxt( basename + ".tfpw_y.csv" )
     mse = numpy.nansum(numpy.square(diff)) / len(diff)
     print( "tfpw_y: "+str(mse)+" "+str(numpy.nanmean(my_whites["tfpw_y"])) )
-    numpy.savetxt( "tfpw_y", w["tfpw_y"] )
+    numpy.savetxt( basename+".tfpw_y", my_whites["tfpw_y"] )
     #assert numpy.nansum(numpy.square(diff)) < 1E-10
 
     diff = my_whites["tfpw_ws"] - numpy.loadtxt( basename + ".tfpw_ws.csv" )
     mse = numpy.nansum(numpy.square(diff)) / len(diff)
     print( "tfpw_ws: "+str(mse)+" "+str(numpy.nanmean(my_whites["tfpw_ws"])) )
-    numpy.savetxt( "tfpw_ws", w["tfpw_ws"] )
+    numpy.savetxt( basename+".tfpw_ws", my_whites["tfpw_ws"] )
     #assert numpy.nansum(numpy.square(diff)) < 1E-10
 
     diff = my_whites["vctfpw"] - numpy.loadtxt( basename + ".vctfpw.csv" )
     mse = numpy.nansum(numpy.square(diff)) / len(diff)
     print( "vctfpw: "+str(mse)+" "+str(numpy.nanmean(my_whites["vctfpw"])) )
-    numpy.savetxt( "vctfpw", w["vctfpw"] )
+    numpy.savetxt( basename+".vctfpw", my_whites["vctfpw"] )
     #assert numpy.nansum(numpy.square(diff)) < 1E-10
 
     
