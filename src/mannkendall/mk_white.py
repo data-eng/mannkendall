@@ -199,14 +199,15 @@ def prewhite( obs, resolution, alpha_ak=95 ):
         # ak is new c and c1 is the last c
         c_1 = copy.copy(c_dict['pw'])
 
-        data_ar_removed_pw = copy.copy(obs)
-        data_ar_removed_pw[1,1:] -= ak_pw * obs[1,:-1]
-        data_ar_removed_pw[1,1:] /= (1-ak_pw)
+        data_ar_removed_pw = copy.copy(obs[1,:])
+        data_ar_removed_pw[1:] -= ak_pw * obs[1,:-1]
+        data_ar_removed_pw[1:] /= (1-ak_pw)
 
-        t = mkt.nb_tie(data_ar_removed_pw[1,:], resolution)
-        (_, n) = mks.s_test(data_ar_removed_pw)
-        vari = mkt.kendall_var(data_ar_removed_pw[1,:], t, n)
-        (b1_pw, _, _) = mks.sen_slope(data_ar_removed_pw, vari)
+        data_ar_removed_pw_2D = np.stack( (obs[0,:],data_ar_removed_pw), axis=0 )
+        t = mkt.nb_tie(data_ar_removed_pw, resolution)
+        (_, n) = mks.s_test(data_ar_removed_pw_2D)
+        vari = mkt.kendall_var(data_ar_removed_pw, t, n)
+        (b1_pw, _, _) = mks.sen_slope(data_ar_removed_pw_2D, vari)
 
        # Remove the trend
         nb_loop = 0
