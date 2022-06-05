@@ -1,12 +1,10 @@
-#!/home/konstant/bin/python3
+#!/usr/bin/python3
 
 import sys
-import datetime
 import numpy
-import mannkendall as mk
 import mannkendall.mk_white as mkw
 
-d = numpy.loadtxt( basename + ".csv" ).T
+d = numpy.loadtxt( sys.argv[1] + ".csv" ).T
 w = mkw.prewhite( d, 0.02, alpha_ak=95)
 # w["pw"] or w["pw_cor"] is Von Storch, 1995
 # w["tfpw_y"] is Yue et al., 2002
