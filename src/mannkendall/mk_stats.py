@@ -15,7 +15,7 @@ This file contains the core statistical routines for the package.
 from datetime import datetime
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.stats import norm
+import scipy.stats
 
 # Import from this package
 from . import mk_tools as mkt
@@ -89,42 +89,57 @@ def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
     (cols,rows) = obs.shape
     if cols != 2:
         raise Exception( "There must be two columns in obs" )
-        
 
-    # Let's compute the slope for all the possible pairs.
-    d = np.array([item for i in range(0, rows-1)
-                  for item in list((obs[1,i+1:rows] - obs[1,i])/mkt.days_to_s(obs[0,i+1:rows] - obs[0,i]))])
+    if True:
+        (slope,intercept) = scipy.stats.siegelslopes( obs[1,:], obs[0,:], method='separate' )
 
-    # Only keep valid values
-    d = d[~np.isnan(d)]
-    # Sort
-    # This will get us the median, and is
-    # also needed for interpolation below
-    d.sort()
+        # Apply the confidence limits
+        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
 
-    l = len(d)
-    if l % 2 == 1:
-        slope = d[(l-1)//2]
+        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
+        # values of m_1 and m_2 to match the matlab implementation.
+        #m_1 = (0.5 * (len(d) - cconf)) - 1
+        #m_2 = (0.5 * (len(d) + cconf)) - 1
+
+        # Here I am stuck, because I do not have the n x n array
+        # Just plug s'thing in and we'll see
+        lcl = 0.0
+        ucl = 0.0
     else:
-        slope = (d[l//2-1]+d[l//2])/2
+        # Let's compute the slope for all the possible pairs.
+        d = np.array([item for i in range(0, rows-1)
+                      for item in list((obs[1,i+1:rows] - obs[1,i])/mkt.days_to_s(obs[0,i+1:rows] - obs[0,i]))])
 
-    # Apply the confidence limits
-    cconf = -norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
+        # Only keep valid values
+        d = d[~np.isnan(d)]
+        # Sort
+        # This will get us the median, and is
+        # also needed for interpolation below
+        d.sort()
 
-    # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
-    # values of m_1 and m_2 to match the matlab implementation.
-    m_1 = (0.5 * (len(d) - cconf)) - 1
-    m_2 = (0.5 * (len(d) + cconf)) - 1
+        l = len(d)
+        if l % 2 == 1:
+            slope = d[(l-1)//2]
+        else:
+            slope = (d[l//2-1]+d[l//2])/2
 
-    if slowcl:
-        # Interpolate when datapoints are sparse
-        f = interp1d(np.arange(0, l, 1), d, kind='linear',
-                     fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
-        lcl = f(m_1)
-        ucl = f(m_2)
-    else:
-        lcl = d[int(m_1)]
-        ucl = d[int(m_2)]
+        # Apply the confidence limits
+        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
+
+        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
+        # values of m_1 and m_2 to match the matlab implementation.
+        m_1 = (0.5 * (len(d) - cconf)) - 1
+        m_2 = (0.5 * (len(d) + cconf)) - 1
+
+        if slowcl:
+            # Interpolate when datapoints are sparse
+            f = interp1d(np.arange(0, l, 1), d, kind='linear',
+                         fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
+            lcl = f(m_1)
+            ucl = f(m_2)
+        else:
+            lcl = d[int(m_1)]
+            ucl = d[int(m_2)]
 
     return (float(slope), float(lcl), float(ucl))
 
