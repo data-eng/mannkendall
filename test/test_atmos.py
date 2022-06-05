@@ -20,30 +20,29 @@ from mannkendall import mk_tools as mkt
 tt = []
 vv = []
 
-def load_data( datafile ):
-    f = open( datafile, "r" )
-    while True:
-        line = f.readline()
-        if not line: break
-        a = line.split( "," )
-        t = float( a[0] )
-        try: v = float( a[1] )
-        except: v = numpy.NaN
-        tt.append(t)
-        vv.append(v)
-    f.close()
-    return numpy.array( [tt, vv], float )
+def test_prewhite( basename ):
+    d = numpy.loadtxt( basename + ".csv" ).T
+    my_whites = mkw.prewhite( d, 0.02, alpha_ak=95 )
+    diff = my_whites["pw"] - numpy.loadtxt( basename + ".pw.csv" )
+    assert numpy.nansum(numpy.square(diff)) < 1E-10
+    diff = my_whites["pw_cor"] - numpy.loadtxt( basename + ".pw_cor.csv" )
+    assert numpy.nansum(numpy.square(diff)) < 1E-10
+    diff = my_whites["tfpw_y"] - numpy.loadtxt( basename + ".tfpw_y.csv" )
+    assert numpy.nansum(numpy.square(diff)) < 1E-10
+    diff = my_whites["tfpw_ws"] - numpy.loadtxt( basename + ".tfpw_ws.csv" )
+    #assert numpy.nansum(numpy.square(diff)) < 1E-10
+    diff = my_whites["vctfpw"] - numpy.loadtxt( basename + ".vctfpw.csv" )
+    assert numpy.nansum(numpy.square(diff)) < 1E-10
 
 
+    
 def test_compute_mk_stat( basename ):
-    d = load_data( basename + ".csv" )
-    tt = []
-    for t in d[0,:]:
-        tt.append( mkt.mat2datetime(t) ) 
+    d = numpy.loadtxt( basename + ".csv" ).T
     good_results = numpy.loadtxt( basename + ".results.csv" )
 
     w = numpy.loadtxt( basename + ".pw.csv" )
     dd = numpy.stack( (d[0,:],w), axis=0 )
+        
     (result, s, vari, z) = mk.compute_mk_stat( dd, 0.02 )
     assert result["p"]    - good_results[0][0] < 1E-10
     assert result["ss"]   - good_results[0][1] == 0
@@ -103,5 +102,10 @@ def test_compute_mk_stat( basename ):
     assert z    - good_results[4][7] < 1E-10
 
 
-test_compute_mk_stat( sys.argv[1] )
+if len(sys.argv) > 1:
+    test_prewhite( sys.argv[1] )
+    test_compute_mk_stat( sys.argv[1] )
+else:
+    test_prewhite( "test_data/AbsCoeff_08_20_daily" )
+    test_compute_mk_stat( "test_data/AbsCoeff_08_20_daily" )
 
