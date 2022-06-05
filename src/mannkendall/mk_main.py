@@ -98,7 +98,7 @@ def compute_mk_stat(obs, resolution, alpha_mk=95, alpha_cl=90):
     obs_dts = np.array(tt)
 
     t = mkt.nb_tie(obs[1,:], resolution)
-    (s, n) = mks.s_test(obs[1,:], obs_dts)
+    (s, n) = mks.s_test(obs)
     vari = mkt.kendall_var(obs[1,:], t, n)
     z = mks.std_normal_var(s, vari)
 

@@ -122,14 +122,15 @@ def sen_slope( obs, k_var, alpha_cl=90. ):
 
     return (float(slope), float(lcl), float(ucl))
 
-def s_test(obs, obs_dts):
+def s_test( obs ):
     """ Compute the S statistics (Si) for the Mann-Kendall test.
 
     From Gilbert (1987).
 
     Args:
-        obs (ndarray of floats): the observations array. Must be 1-D.
-        obs_dts (ndarray of datetime.datetime): a list of observation datetimes.
+        obs (2D ndarray<float>): the data array. The first column is MATLAB timestamps
+                                 and the second column is the observations.
+                                 MUST be time-ordrered.
 
     Returns:
         (float, ndarray): S, n.
@@ -138,30 +139,13 @@ def s_test(obs, obs_dts):
                           n (ndarray of int) = number of valid data in each year of the time series
 
     """
-    # If the user gave me a list ... be nice and deal with it.
-    if isinstance(obs, list) and np.all([isinstance(item, (float, int)) for item in obs]):
-        obs = np.array(obs)
-
-    # Idem for the obs_dts
-    if isinstance(obs_dts, list) and np.all([isinstance(item, datetime) for item in obs_dts]):
-        obs_dts = np.array(obs_dts)
 
     # Some sanity checks first
-    for item in [obs, obs_dts]:
-        if not isinstance(item, np.ndarray):
-            raise Exception('Ouch ! I was expecting some numpy.ndarray, not: %s' % (type(item)))
-        if np.ndim(item) != 1:
-            raise Exception('Ouch ! The numpy.ndarray must have 1 dimensions, not: %i' %
-                            (np.ndim(item)))
-        if len(item) != len(obs):
-            raise Exception('Ouch ! obs and obs_dts should have the same length !')
-
-    # Check that I was indeed given proper datetimes !
-    if np.any([not isinstance(item, datetime) for item in obs_dts]):
-        raise Exception('Ouch ! I need proper datetime.datetime entities !')
+    if not isinstance(obs, np.ndarray):
+        raise Exception('Ouch ! I was expecting some numpy.ndarray, not: %s' % (type(item)))
 
     # Find the limiting years
-    obs_years = np.array([item.year for item in obs_dts])
+    obs_years = np.array([mkt.mat2datetime(item).year for item in obs[0,:]])
     min_year = np.min(obs_years)
     max_year = np.max(obs_years)
 
@@ -172,12 +156,12 @@ def s_test(obs, obs_dts):
 
     for (yr_ind, year) in enumerate(range(min_year, max_year+1)):
         #How valid points do I have :
-        n[yr_ind] = np.count_nonzero(~np.isnan(obs[obs_years == year]))
+        n[yr_ind] = np.count_nonzero(~np.isnan((obs[1,:])[obs_years == year]))
 
         # Compute s for that year, by summing the signs for the differences with all the upcoming
         # years
-        sij[yr_ind] = np.nansum([np.sign(item - obs[obs_years == year])
+        sij[yr_ind] = np.nansum([np.sign(item - (obs[1,:])[obs_years == year])
                                  for yr2 in range(year+1, max_year+1)
-                                 for item in obs[obs_years == yr2]])
+                                 for item in (obs[1,:])[obs_years == yr2]])
 
     return (np.nansum(sij), n)
