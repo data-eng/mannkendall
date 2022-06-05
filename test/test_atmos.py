@@ -47,8 +47,8 @@ def test_compute_mk_stat( basename ):
     assert result["p"]    - good_results[0][0] < 1E-10
     assert result["ss"]   - good_results[0][1] == 0
     assert result["slope"]- good_results[0][2] < 1E-10
-    assert result["ucl"]  - good_results[0][3] < 1E-10
-    assert result["lcl"]  - good_results[0][4] < 1E-10
+    assert result["ucl"]  - good_results[0][3] < 1E-15
+    assert result["lcl"]  - good_results[0][4] < 1E-15
     assert s    - good_results[0][5] < 1E-2
     assert vari - good_results[0][6] < 1E-10
     assert z    - good_results[0][7] < 1E-10
@@ -59,8 +59,8 @@ def test_compute_mk_stat( basename ):
     assert result["p"]    - good_results[1][0] < 1E-10
     assert result["ss"]   - good_results[1][1] == 0
     assert result["slope"]- good_results[1][2] < 1E-10
-    assert result["ucl"]  - good_results[1][3] < 1E-10
-    assert result["lcl"]  - good_results[1][4] < 1E-10
+    assert result["ucl"]  - good_results[1][3] < 1E-15
+    assert result["lcl"]  - good_results[1][4] < 1E-15
     assert s    - good_results[1][5] < 1E-2
     assert vari - good_results[1][6] < 1E-10
     assert z    - good_results[1][7] < 1E-10
@@ -71,8 +71,8 @@ def test_compute_mk_stat( basename ):
     assert result["p"]    - good_results[2][0] < 1E-10
     assert result["ss"]   - good_results[2][1] == 0
     assert result["slope"]- good_results[2][2] < 1E-10
-    assert result["ucl"]  - good_results[2][3] < 1E-10
-    assert result["lcl"]  - good_results[2][4] < 1E-10
+    assert result["ucl"]  - good_results[2][3] < 1E-15
+    assert result["lcl"]  - good_results[2][4] < 1E-15
     assert s    - good_results[2][5] < 1E-2
     assert vari - good_results[2][6] < 1E-10
     assert z    - good_results[2][7] < 1E-10
@@ -83,8 +83,8 @@ def test_compute_mk_stat( basename ):
     assert result["p"]    - good_results[3][0] < 1E-10
     assert result["ss"]   - good_results[3][1] == 0
     assert result["slope"]- good_results[3][2] < 1E-10
-    assert result["ucl"]  - good_results[3][3] < 1E-10
-    assert result["lcl"]  - good_results[3][4] < 1E-10
+    assert result["ucl"]  - good_results[3][3] < 1E-15
+    assert result["lcl"]  - good_results[3][4] < 1E-15
     assert s    - good_results[3][5] < 1E-2
     assert vari - good_results[3][6] < 1E-10
     assert z    - good_results[3][7] < 1E-10
@@ -95,8 +95,8 @@ def test_compute_mk_stat( basename ):
     assert result["p"]    - good_results[4][0] < 1E-10
     assert result["ss"]   - good_results[4][1] == 0
     assert result["slope"]- good_results[4][2] < 1E-10
-    assert result["ucl"]  - good_results[4][3] < 1E-10
-    assert result["lcl"]  - good_results[4][4] < 1E-10
+    assert result["ucl"]  - good_results[4][3] < 1E-15
+    assert result["lcl"]  - good_results[4][4] < 1E-15
     assert s    - good_results[4][5] < 1E-2
     assert vari - good_results[4][6] < 1E-10
     assert z    - good_results[4][7] < 1E-10

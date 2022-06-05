@@ -51,21 +51,24 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90. ):
+def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval::
 
         (xj-xi)/(j-i), j>i
 
-    The confidence limits are computed with an interpolation that is important if the number of data
-    point is small, such as for yearly averages for a 10 year trend.
 
     Args:
         obs (2D ndarray of floats): the data array. The first column is
         MATLAB timestamps and the second column is the observations.
         k_var (float): Kendall variance, computed with Kendall_var.
         confidence (float, optional): the desired confidence limit, in %. Defaults to 90.
+
+        slowcl (bool, optional): Whether to compute confidence limits with an interpolation
+                                 that is important when datapoints are few, such as for yearly
+                                 averages for a 10 year trend.
+                                 Defaults to False (do not interpolate)
 
     Return:
         (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
@@ -113,12 +116,15 @@ def sen_slope( obs, k_var, alpha_cl=90. ):
     m_1 = (0.5 * (len(d) - cconf)) - 1
     m_2 = (0.5 * (len(d) + cconf)) - 1
 
-    # Let's setup a quick interpolation scheme to get the best possible confidence limits
-    f = interp1d(np.arange(0, l, 1), d, kind='linear',
-                 fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
-
-    lcl = f(m_1)
-    ucl = f(m_2)
+    if slowcl:
+        # Interpolate when datapoints are sparse
+        f = interp1d(np.arange(0, l, 1), d, kind='linear',
+                     fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
+        lcl = f(m_1)
+        ucl = f(m_2)
+    else:
+        lcl = d[int(m_1)]
+        ucl = d[int(m_2)]
 
     return (float(slope), float(lcl), float(ucl))
 
