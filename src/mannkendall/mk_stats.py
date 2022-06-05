@@ -90,14 +90,17 @@ def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
     if cols != 2:
         raise Exception( "There must be two columns in obs" )
 
-    if True:
+    if False:
         good = ((obs.T)[~np.isnan(obs.T).any(axis=1)]).T
         (slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='separate' )
+        #(slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='hierarchical' )
         #print(intercept)
         lcl = -0.001703836049373384 # cheated
         ucl = -0.014435684784773533 # cheated
-        #(slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='hierarchical' )
-        #(slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=alpha_cl, method='separate' )
+    elif True:
+        good = ((obs.T)[~np.isnan(obs.T).any(axis=1)]).T
+        a = float(alpha_cl) / 100
+        (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='separate' ) 
     else:
         # Let's compute the slope for all the possible pairs.
         d = np.array([item for i in range(0, rows-1)
