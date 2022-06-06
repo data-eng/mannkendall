@@ -113,6 +113,7 @@ def nb_tie(data, resolution):
     # Avoid the use of np.arange because of floating point errors, in favor of linspace
     #bins = np.arange(np.nanmin(data), np.nanmax(data)+resolution, resolution)
     nbins = int((np.nanmax(data)-np.nanmin(data))//resolution + 1)
+    #print("YYYY " +str(np.nanmax(data)) + " " + str(np.nanmin(data)) + " -> " + str(nbins))
     bins = np.linspace(np.nanmin(data), np.nanmin(data) + nbins * resolution, num=nbins + 1)
                        #dtype='float128') # Partial fix of #17, but does not work on all machines !
 

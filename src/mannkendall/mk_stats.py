@@ -51,31 +51,33 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
+def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
     """ Compute Sen's slope.
 
-    Specifically, this computes the median of the slopes for each interval::
+    Specifically, this computes the median of the slopes for each interval:
 
         (xj-xi)/(j-i), j>i
-
 
     Args:
         obs (2D ndarray of floats): the data array. The first column is
         MATLAB timestamps and the second column is the observations.
+
         k_var (float): Kendall variance, computed with Kendall_var.
+
         confidence (float, optional): the desired confidence limit, in %. Defaults to 90.
 
-        slowcl (bool, optional): Whether to compute confidence limits with an interpolation
-                                 that is important when datapoints are few, such as for yearly
-                                 averages for a 10 year trend.
-                                 Defaults to False (do not interpolate)
+        method (string, opt): Method for calculating slope. One of:
+                              "siegel", "thiel": as implemented in scipy.
+                              "brute" (default): builds the n x n array of slopes and sorts it
+                              to find the median and the confidence limits.
+                              "brute-sparse": same as brute, but also computes confidence limits
+                              with an interpolation. When datapoints are few.
 
     Return:
         (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
 
     Note:
         The slopes are returned in units of 1/s.
-
     """
 
     # Start with some sanity checks
@@ -90,17 +92,21 @@ def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
     if cols != 2:
         raise Exception( "There must be two columns in obs" )
 
-    if False:
-        good = ((obs.T)[~np.isnan(obs.T).any(axis=1)]).T
+    if method == "siegel":
+        # TODO: write an iterative NaN remover
+        obsT = obs.T
+        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
         (slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='separate' )
         #(slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='hierarchical' )
-        #print(intercept)
-        lcl = -0.001703836049373384 # cheated
-        ucl = -0.014435684784773533 # cheated
-    elif True:
-        good = ((obs.T)[~np.isnan(obs.T).any(axis=1)]).T
+        lcl = 0 # how will these be computed?
+        ucl = 0 # how will these be computed?
+    elif method == "theil":
+        # TODO: write an iterative NaN remover
+        obsT = obs.T
+        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
         a = float(alpha_cl) / 100
-        (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='separate' ) 
+        (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='joint' )
+        #(slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='separate' )
     else:
         # Let's compute the slope for all the possible pairs.
         d = np.array([item for i in range(0, rows-1)
@@ -127,7 +133,7 @@ def sen_slope( obs, k_var, alpha_cl=90., slowcl=False ):
         m_1 = (0.5 * (len(d) - cconf)) - 1
         m_2 = (0.5 * (len(d) + cconf)) - 1
 
-        if slowcl:
+        if method == "brute-sparse":
             # Interpolate when datapoints are sparse
             f = interp1d(np.arange(0, l, 1), d, kind='linear',
                          fill_value=(d[0],d[-1]), assume_sorted=True, bounds_error=False)
