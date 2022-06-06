@@ -13,9 +13,11 @@ This file contains useful tools for the package.
 
 # Import the required packages
 import numpy as np
+import datetime
 from scipy import stats as spstats
 
 from statsmodels.tsa import stattools
+
 
 def de_sort(vals, inds):
     """ De-sort an array of values vals that were sorted according to the indices inds.
@@ -58,6 +60,21 @@ def dt_to_s(time_deltas):
 
     return f(time_deltas)
 
+def days_to_s( days ):
+    """ A convenience function that converts an array of MATLAB times into an array of
+    day floats corresponding to the total_seconds() of each elements.
+
+    Args:
+        time_deltas (ndarray of float): array of timestamps
+
+    Returns:
+        ndaray of float: the same array with all elements converted to total_seconds().
+
+    """
+
+    f = np.vectorize(lambda x: x*86400)
+    return f(days)
+
 def nb_tie(data, resolution):
     """ Compute the number of data point considered to be equivalent (and to be treated as "ties").
 
@@ -96,6 +113,7 @@ def nb_tie(data, resolution):
     # Avoid the use of np.arange because of floating point errors, in favor of linspace
     #bins = np.arange(np.nanmin(data), np.nanmax(data)+resolution, resolution)
     nbins = int((np.nanmax(data)-np.nanmin(data))//resolution + 1)
+    #print("YYYY " +str(np.nanmax(data)) + " " + str(np.nanmin(data)) + " -> " + str(nbins))
     bins = np.linspace(np.nanmin(data), np.nanmin(data) + nbins * resolution, num=nbins + 1)
                        #dtype='float128') # Partial fix of #17, but does not work on all machines !
 
@@ -200,3 +218,31 @@ def levinson(r, n):
     out = stattools.levinson_durbin(r, nlags=n, isacov=True)
 
     return (np.array([1] + list(-out[1])), out[0], -out[2][1:])
+
+def mat2datetime(datenum):
+    # Matlab time is days since 1/1/0000.
+    # Python ordinal time is since 1/1/0001.
+    if type(datenum) is int:
+        dt = datetime.date.fromordinal(datenum) - \
+             datetime.timedelta(days = 366)
+        return dt
+    else:
+        # fraction of the day
+        days = datenum % 1
+        # add integer days and fraction of the day
+        dt = datetime.datetime.fromordinal(int(datenum)) + \
+             datetime.timedelta(days=days) - datetime.timedelta(days = 366)
+        return dt
+
+def datetime2mat(dt):
+    # Matlab time is days since 1/1/0000.
+    # Python ordinal time is since 1/1/0001.
+    if type(dt) is datetime.date:
+        d = (dt - datetime.date(1,1,1)).days + 1
+        return d + 366
+    else:
+        f = float(dt.second)/60.0
+        f = (f+float(dt.minute))/60.0
+        f = (f+float(dt.hour))/24.0
+        d = (dt - datetime.datetime(1,1,1,0,0,0)).days + 1
+        return f + float(d) + 366.0
