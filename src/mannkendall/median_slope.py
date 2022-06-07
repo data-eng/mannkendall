@@ -2,6 +2,7 @@ import sys
 import numpy
 import time
 import operator
+import collections
 
 
 def initializer( obs, max_size ):
