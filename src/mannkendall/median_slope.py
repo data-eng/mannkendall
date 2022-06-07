@@ -126,7 +126,7 @@ obs = numpy.loadtxt( sys.argv[1] ).T
 
 print( "loaded " + str(obs.shape) )
 obsT = obs.T
-good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
+good = ((obsT)[~numpy.isnan(obsT).any(axis=1)]).T
 print( "after nan rm " + str(good.shape) )
 
 
