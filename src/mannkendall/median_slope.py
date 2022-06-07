@@ -122,11 +122,17 @@ def generator( obs ):
 #data = [ [0,10,20,30,40,50,60,70,80,90,100,110,120], [5,1,5,6,5,2,4,8,2,3,1,2,4] ]
 #datastack = numpy.array(data)
 
-datastack = numpy.loadtxt( sys.argv[1] ).T
+obs = numpy.loadtxt( sys.argv[1] ).T
+
+print( "loaded " + str(obs.shape) )
+obsT = obs.T
+good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
+print( "after nan rm " + str(good.shape) )
+
 
 #a=datastack[:,datastack[1,:].argsort()]
 #print(datastack)
-generator( datastack )
+generator( good )
 
 print("Gen")
 
