@@ -1,6 +1,7 @@
 import sys
 import numpy
 import time
+import operator
 
 
 def initializer( obs, max_size ):
