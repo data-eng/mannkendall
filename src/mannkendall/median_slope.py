@@ -1,7 +1,5 @@
 import sys
 import numpy
-import collections
-import operator
 import time
 
 
@@ -88,17 +86,22 @@ def median( d ):
         idx_median = n//2 - d["left_heap"]
         if d["trace"]:
             print("MM2a " + str(idx_median) )
-        (_,_,retv) = d["data"][idx_median]
-        print("MM3 " + str(retv) )
+        if (idx_median < 0) or (idx_median >= len(d["data"])):
+            # we lost the median somewhere in the heaps
+            retv = None
+        else:
+            (_,_,retv) = d["data"][idx_median]
     else:
         idx_median = n//2 - d["left_heap"]
         if d["trace"]:
             print("MM2b " + str(idx_median) )
-        (_,_,m1) = d["data"][idx_median]
-        (_,_,m2) = d["data"][idx_median+1]
-        if d["trace"]:
-            print("MM3 " + str(m1) + " " + str(m2) )
-        retv = float(m1+m2)/2
+        if (idx_median < 0) or (idx_median >= len(d["data"])):
+            # we lost the median somewhere in the heaps
+            retv = None
+        else:
+            (_,_,m1) = d["data"][idx_median]
+            (_,_,m2) = d["data"][idx_median+1]
+            retv = float(m1+m2)/2
     return retv
 
 all_slopes = []
