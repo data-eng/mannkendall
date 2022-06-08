@@ -3,15 +3,18 @@ import numpy
 import time
 import operator
 
-30501853
-8667366
 
 def initializer( obs ):
     retv = {}
-    # Three float arrays of this size will be needed
+    retv["obs"] = obs
+    # Three array of up-to-this size will be needed
     # for the second pass
-    retv["max_size"] = 2048576
+    retv["max_size"] = 1048576
     retv["trace"] = True
+    # These are the three arrays
+    retv["lo"] = None
+    retv["me"] = None
+    retv["hi"] = None
 
     (_,l) = obs.shape
     min = None
@@ -49,13 +52,17 @@ def initializer( obs ):
 
 
 
-def record_value( d, v ):
+def record_value( d, v, f ):
+    # f is 1 or 0.
+    # Use 1 to increment the bin count.
+    # Use 0 to only find the righ bin
     bin=0
     while( (bin < d["num_bins"]-1) and (v > d["bin_boundary"][bin]) ):
         bin += 1
     if d["trace"] and False:
         print( "Added " + str(v) + " to bin " + str(bin) )
-    d["bin_count"][bin] += 1
+    d["bin_count"][bin] += f
+    return bin
 
 
     
@@ -148,6 +155,92 @@ def median( d ):
     return retv
 
 
+
+def find_bins( d, low=0.05, med=0.5, high=0.95 ):
+    (_,l) = d["obs"].shape
+    print((l-2)*(l-1)/2)
+    n=0
+    for i in range(1,l):
+        for j in range(i+1,l):
+            n += 1
+            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            record_value( d, slope, 1 )
+            if n%10000 == 0:
+                if d["trace"] and False:
+                    print( str(n)+": "+str(d["bin_count"]) )
+                r = rebalance( d )
+                if d["trace"] and r:
+                    print("Rebalanced")
+                    print( d["bin_count"] )
+                    print( d["bin_boundary"] )
+    if d["trace"]:
+        print("The end")
+        print(n)
+        print( d["bin_count"] )
+        print( d["bin_boundary"] )
+
+    percentile05 = 0.05 * float(n)
+    percentile50 = 0.5  * float(n)
+    percentile95 = 0.95 * float(n)
+
+    percentile05_bin = None
+    percentile50_bin = None
+    percentile95_bin = None
+
+    acc = 0
+    for b in range(d["num_bins"]):
+        acc += d["bin_count"][b]
+        if (percentile05_bin is None) and (percentile05 < acc):
+            percentile05_bin = b
+        if (percentile50_bin is None) and (percentile50 < acc):
+            percentile50_bin = b
+        if (percentile95_bin is None) and (percentile95 < acc):
+            percentile95_bin = b
+
+    return( percentile05_bin, percentile50_bin, percentile95_bin )
+
+
+
+def populate_bins( d, low, med, high ):
+    (_,l) = d["obs"].shape
+    d["lo"] = numpy.zeros( d["max_size"] )
+    d["me"] = numpy.zeros( d["max_size"] )
+    d["hi"] = numpy.zeros( d["max_size"] )
+    if d["trace"]:
+        print( 'd["lo"] has '+str(len(d["lo"])) )
+        print( 'd["me"] has '+str(len(d["me"])) )
+        print( 'd["hi"] has '+str(len(d["hi"])) )
+    lo_ptr = 0
+    me_ptr = 0
+    hi_ptr = 0
+    n=0
+    for i in range(1,l):
+        for j in range(i+1,l):
+            n+=1
+            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            bin = record_value( d, slope, -1 )
+            if d["trace"] and ( (lo_ptr > 1048570) or (me_ptr > 1048570) or (hi_ptr > 1048570) ):
+                print( n )
+                print( lo_ptr )
+                print( bin )
+                print( d["bin_boundary"] )
+                print( d["bin_count"] )
+            if bin == low:
+                d["lo"][lo_ptr] = slope
+                lo_ptr += 1
+            if bin == med:
+                d["me"][me_ptr] = slope
+                me_ptr += 1
+            if bin == high:
+                d["hi"][hi_ptr] = slope
+                hi_ptr += 1
+
+    print( "Polulated bins with: low ("+str(d["bin_count"][low])+"): "+str(lo_ptr)+\
+           " med ("+str(d["bin_count"][med])+"): "+str(me_ptr)++
+           " high ("+str(d["bin_count"][high])+")"+str(hi_ptr) )
+
+
+
 test = "test2"
 
 if test == "test1":
@@ -163,37 +256,5 @@ else:
     print( "after nan rm " + str(obs.shape) )
 
 d = initializer( obs )
-print( d["bin_count"] )
-print( d["bin_boundary"] )
-    
-all_slopes = []
-
-(_,l) = obs.shape
-print((l-2)*(l-1)/2)
-n=0
-for i in range(1,l):
-    for j in range(i+1,l):
-        n += 1
-        slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
-        #all_slopes.append( (i,j,slope) )
-        record_value( d, slope )
-        if n%10000 == 0:
-            print(n)
-            print( d["bin_count"] )
-            r = rebalance( d )
-            if r:
-                print("Rebalanced")
-                print( d["bin_count"] )
-                print( d["bin_boundary"] )
-
-print("The end")
-print(n)
-print( d["bin_count"] )
-print( d["bin_boundary"] )
-
-#print( median(d) )
-
-    #d.append( all_sorted[0] )
-    #d.append( all_sorted[-1] )
-
-
+(low_bin, mid_bin, high_bin) = find_bins( d )
+populate_bins( d, low_bin, mid_bin, high_bin )
