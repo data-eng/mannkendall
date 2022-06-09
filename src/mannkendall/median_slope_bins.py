@@ -31,7 +31,7 @@ def initializer( obs ):
             max = slope
 
     n = (l-2)*(l-1)/2
-    retv["num_bins"] = 5#2 * int(1 + n // retv["max_size"])
+    retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
     bin_width = (max-min)/retv["num_bins"]
 
     if retv["trace"]:
@@ -59,8 +59,8 @@ def record_value( d, v, f ):
     bin=0
     while( (bin < d["num_bins"]-1) and (v > d["bin_boundary"][bin]) ):
         bin += 1
-    if d["trace"] and False:
-        print( "Added " + str(v) + " to bin " + str(bin) )
+    if d["trace"]:
+        print( "Placed " + str(v) + " in bin " + str(bin) )
     d["bin_count"][bin] += f
     return bin
 
@@ -184,7 +184,7 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
             n += 1
             slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
             record_value( d, slope, 1 )
-            if n%10000 == 0:
+            if n%1000 == 0:
                 if d["trace"] and False:
                     print( str(n)+": "+str(d["bin_count"]) )
                 r = rebalance( d )
@@ -221,13 +221,10 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
 
 def populate_bins( d, low, med, high ):
     (_,l) = d["obs"].shape
-    d["lo"] = numpy.zeros( 2*d["max_size"] )
-    d["me"] = numpy.zeros( 2*d["max_size"] )
-    d["hi"] = numpy.zeros( 2*d["max_size"] )
-    if d["trace"]:
-        print( 'd["lo"] has '+str(len(d["lo"])) )
-        print( 'd["me"] has '+str(len(d["me"])) )
-        print( 'd["hi"] has '+str(len(d["hi"])) )
+    # give some margin wrt. d["max_size"]. Just because.
+    d["lo"] = numpy.zeros( int(1.5*d["max_size"]) )
+    d["me"] = numpy.zeros( int(1.5*d["max_size"]) )
+    d["hi"] = numpy.zeros( int(1.5*d["max_size"]) )
     lo_ptr = 0
     me_ptr = 0
     hi_ptr = 0
@@ -244,6 +241,10 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 lo_ptr += 1
+                if d["trace"]:
+                    print( "Added "+str(slope)+" to low bin ("+str(bin)+"). New len: "+str(lo_ptr) )
+                    if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
+                        print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
             if bin == med:
                 try:
                     d["me"][me_ptr] = slope
@@ -253,6 +254,10 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 me_ptr += 1
+                if d["trace"]:
+                    print( "Added "+str(slope)+" to med bin ("+str(bin)+"). New len: "+str(me_ptr) )
+                    if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
+                        print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
             if bin == high:
                 try:
                     d["hi"][hi_ptr] = slope
@@ -262,6 +267,10 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 hi_ptr += 1
+                if d["trace"]:
+                    print( "Added "+str(slope)+" to high bin ("+str(bin)+"). New len: "+str(hi_ptr) )
+                    if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
+                        print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
 
     d["low_len"] = lo_ptr
     d["med_len"] = me_ptr
