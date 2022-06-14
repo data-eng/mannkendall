@@ -7,7 +7,7 @@ import operator
 def initializer( obs ):
     retv = {}
     retv["obs"] = obs
-    # Three array of up-to-this size will be needed
+    # Three arrays of up-to-this size will be needed
     # for the second pass
     retv["max_size"] = 1048576
     retv["trace"] = True
@@ -31,7 +31,7 @@ def initializer( obs ):
             max = slope
 
     n = (l-2)*(l-1)/2
-    retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
+    retv["num_bins"] = 5 * int(1 + n // retv["max_size"])
     bin_width = (max-min)/retv["num_bins"]
 
     if retv["trace"]:
@@ -59,7 +59,7 @@ def record_value( d, v, f ):
     bin=0
     while( (bin < d["num_bins"]-1) and (v > d["bin_boundary"][bin]) ):
         bin += 1
-    if d["trace"]:
+    if d["trace"] and False:
         print( "Placed " + str(v) + " in bin " + str(bin) )
     d["bin_count"][bin] += f
     return bin
@@ -169,9 +169,9 @@ def rebalance( d ):
                 d["bin_count"][max_idx] = d["bin_count"][max_idx] // 2
             else:
                 d["bin_count"][max_idx] = 1 + d["bin_count"][max_idx] // 2
-        return True
+        return (max_idx,bin1,bin2)
     else:
-        return False
+        return None
 
 
 
@@ -179,21 +179,27 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
     (_,l) = d["obs"].shape
     print((l-2)*(l-1)/2)
     n=0
+    d["percentile"] = {}
+    d["percentile"]["low"] = low
+    d["percentile"]["med"] = med
+    d["percentile"]["high"]= high
+    
     for i in range(1,l):
         for j in range(i+1,l):
             n += 1
             slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
             record_value( d, slope, 1 )
-            if n%1000 == 0:
+            if n%10 == 0:
                 if d["trace"] and False:
                     print( str(n)+": "+str(d["bin_count"]) )
                 r = rebalance( d )
-                if d["trace"] and r:
-                    print("Rebalanced")
+                if d["trace"] and (r is not None) and False:
+                    print("Rebalanced at "+str(n)+": "+str(r))
                     print( d["bin_count"] )
                     print( d["bin_boundary"] )
     d["n"] = n
     if d["trace"]:
+        print("First pass:")
         print( d["bin_count"] )
         print( d["bin_boundary"] )
 
@@ -219,12 +225,50 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
 
 
 
+def recount_bins( d ):
+    (_,l) = d["obs"].shape
+    print((l-2)*(l-1)/2)
+    for i in range(len(d["bin_count"])): d["bin_count"][i]=0
+    n=0
+    for i in range(1,l):
+        for j in range(i+1,l):
+            n += 1
+            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            record_value( d, slope, 1 )
+    d["n"] = n
+    if d["trace"]:
+        print("Second pass:")
+        print( d["bin_count"] )
+        print( d["bin_boundary"] )
+
+    percentile05 = d["percentile"]["low"]  * float(n)
+    percentile50 = d["percentile"]["med"]  * float(n)
+    percentile95 = d["percentile"]["high"] * float(n)
+
+    percentile05_bin = None
+    percentile50_bin = None
+    percentile95_bin = None
+
+    acc = 0
+    for b in range(d["num_bins"]):
+        acc += d["bin_count"][b]
+        if (percentile05_bin is None) and (percentile05 < acc):
+            percentile05_bin = b
+        if (percentile50_bin is None) and (percentile50 < acc):
+            percentile50_bin = b
+        if (percentile95_bin is None) and (percentile95 < acc):
+            percentile95_bin = b
+
+    return( percentile05_bin, percentile50_bin, percentile95_bin )
+
+
+
 def populate_bins( d, low, med, high ):
     (_,l) = d["obs"].shape
     # give some margin wrt. d["max_size"]. Just because.
-    d["lo"] = numpy.zeros( int(1.5*d["max_size"]) )
-    d["me"] = numpy.zeros( int(1.5*d["max_size"]) )
-    d["hi"] = numpy.zeros( int(1.5*d["max_size"]) )
+    d["lo"] = numpy.zeros( d["bin_count"][low] )
+    d["me"] = numpy.zeros( d["bin_count"][med] )
+    d["hi"] = numpy.zeros( d["bin_count"][high])
     lo_ptr = 0
     me_ptr = 0
     hi_ptr = 0
@@ -241,7 +285,7 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 lo_ptr += 1
-                if d["trace"]:
+                if d["trace"] and False:
                     print( "Added "+str(slope)+" to low bin ("+str(bin)+"). New len: "+str(lo_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
@@ -254,7 +298,7 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 me_ptr += 1
-                if d["trace"]:
+                if d["trace"] and False:
                     print( "Added "+str(slope)+" to med bin ("+str(bin)+"). New len: "+str(me_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
@@ -267,7 +311,7 @@ def populate_bins( d, low, med, high ):
                            " high ("+str(high)+")"+str(hi_ptr) )
                     raise
                 hi_ptr += 1
-                if d["trace"]:
+                if d["trace"] and False:
                     print( "Added "+str(slope)+" to high bin ("+str(bin)+"). New len: "+str(hi_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
@@ -288,7 +332,9 @@ def populate_bins( d, low, med, high ):
 def get_percentiles( d ):
     n1 = d["bin_count"].sum()
     n = d["n"]
-    assert n1 == n
+    if n1 != n:
+        print( 'd["bin_count"].sum(): '+str(d["bin_count"].sum()) )
+        print( "n: "+str(n) )
 
     d["low"] = 0.05
     d["med"] = 0.5
@@ -352,8 +398,13 @@ else:
     print( "after nan rm " + str(obs.shape) )
 
 d = initializer( obs )
+
 (low_bin, mid_bin, high_bin) = find_bins( d )
+
+(low_bin, mid_bin, high_bin) = recount_bins( d )
+
 populate_bins( d, low_bin, mid_bin, high_bin )
+
 (value_low,value_med,value_high) = get_percentiles( d )
 
 print( (value_low,value_med,value_high) )
