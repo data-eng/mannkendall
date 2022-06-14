@@ -323,7 +323,9 @@ def populate_bins( d, low, med, high ):
     d["med_bin"] = med
     d["high_bin"]= high
 
-    print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+    # TODO: sort elemnts up to ptr
+    
+    print( "Populated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
            " med ("+str(med)+"): "+str(me_ptr)+\
            " high ("+str(high)+")"+str(hi_ptr) )
 
@@ -400,8 +402,20 @@ else:
 d = initializer( obs )
 
 (low_bin, mid_bin, high_bin) = find_bins( d )
-
+print("Recounting")
 (low_bin, mid_bin, high_bin) = recount_bins( d )
+
+while True:
+    r = rebalance( d )
+    if (r is None):
+        print("Rebalanced: None")
+        break
+    else:
+        print("Rebalanced: "+str(r))
+        print( d["bin_count"] )
+        print( d["bin_boundary"] )
+    print("Recounting")
+    (low_bin, mid_bin, high_bin) = recount_bins( d )
 
 populate_bins( d, low_bin, mid_bin, high_bin )
 
