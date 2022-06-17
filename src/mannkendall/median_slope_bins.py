@@ -31,7 +31,7 @@ def initializer( obs ):
             max = slope
 
     n = (l-2)*(l-1)/2
-    retv["num_bins"] = 5 * int(1 + n // retv["max_size"])
+    retv["num_bins"] = 10 * int(1 + n // retv["max_size"])
     bin_width = (max-min)/retv["num_bins"]
 
     if retv["trace"]:
@@ -265,10 +265,9 @@ def recount_bins( d ):
 
 def populate_bins( d, low, med, high ):
     (_,l) = d["obs"].shape
-    # give some margin wrt. d["max_size"]. Just because.
-    d["lo"] = numpy.zeros( d["bin_count"][low] )
-    d["me"] = numpy.zeros( d["bin_count"][med] )
-    d["hi"] = numpy.zeros( d["bin_count"][high])
+    d["lo"] = numpy.full( d["bin_count"][low], numpy.inf )
+    d["me"] = numpy.full( d["bin_count"][med], numpy.inf )
+    d["hi"] = numpy.full( d["bin_count"][high],numpy.inf )
     lo_ptr = 0
     me_ptr = 0
     hi_ptr = 0
@@ -323,11 +322,18 @@ def populate_bins( d, low, med, high ):
     d["med_bin"] = med
     d["high_bin"]= high
 
-    # TODO: sort elemnts up to ptr
+    # The arrays might not be full, but have been initialized
+    # with numpy.inf, so all unused elements will sort to the right
+    # of all used elements.
+    if d["trace"]: print( "Sorting" )
+    d["lo"].sort()
+    d["me"].sort()
+    d["hi"].sort()
     
-    print( "Populated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
-           " med ("+str(med)+"): "+str(me_ptr)+\
-           " high ("+str(high)+")"+str(hi_ptr) )
+    if d["trace"]:
+        print( "Populated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+               " med ("+str(med)+"): "+str(me_ptr)+\
+               " high ("+str(high)+")"+str(hi_ptr) )
 
 
 
@@ -385,9 +391,11 @@ def get_percentiles( d ):
 
 
 
-test = "test2"
+test = "sort"
 
-if test == "test1":
+if test == "sort":
+    aa
+elif test == "test1":
     data = [ [0,10,20,30,40,50,60,70,80,90,100,110,120], [5,1,5,6,5,2,4,8,2,3,1,2,4] ]
     obs = numpy.array(data)
     #a=datastack[:,datastack[1,:].argsort()]
