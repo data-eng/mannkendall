@@ -9,7 +9,7 @@ def initializer( obs ):
     retv["obs"] = obs
     # Three arrays of up-to-this size will be needed
     # for the second pass
-    retv["max_size"] = 1048576
+    retv["max_size"] = 256
     retv["trace"] = True
     # These are the three arrays
     retv["lo"] = None
@@ -33,7 +33,6 @@ def initializer( obs ):
     n = (l-2)*(l-1)/2
     retv["num_bins"] = 10 * int(1 + n // retv["max_size"])
     bin_width = (max-min)/retv["num_bins"]
-
     if retv["trace"]:
         print( "Init: " + str(retv["num_bins"]) + " bins for " + str(n) + " items from " + str(min) + " to " + str(max)  )
         print( "bin_width is " + str(bin_width) )
