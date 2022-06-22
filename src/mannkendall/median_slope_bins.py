@@ -187,7 +187,7 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
     for i in range(1,l):
         for j in range(i+1,l):
             n += 1
-            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             record_value( d, slope, 1 )
             if n%10 == 0:
                 if d["trace"] and False:
@@ -233,7 +233,7 @@ def recount_bins( d ):
     for i in range(1,l):
         for j in range(i+1,l):
             n += 1
-            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             record_value( d, slope, 1 )
     d["n"] = n
     if d["trace"]:
@@ -273,7 +273,7 @@ def populate_bins( d, low, med, high ):
     hi_ptr = 0
     for i in range(1,l):
         for j in range(i+1,l):
-            slope = float(obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+            slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             bin = record_value( d, slope, 0 )
             if bin == low:
                 try:
@@ -390,43 +390,43 @@ def get_percentiles( d ):
     return (value_low,value_med,value_high)
 
 
+def run_me():
+    test = "sort"
 
-test = "sort"
-
-if test == "sort":
-    aa
-elif test == "test1":
-    data = [ [0,10,20,30,40,50,60,70,80,90,100,110,120], [5,1,5,6,5,2,4,8,2,3,1,2,4] ]
-    obs = numpy.array(data)
-    #a=datastack[:,datastack[1,:].argsort()]
-    #print(datastack)
-else:
-    obs1 = numpy.loadtxt( sys.argv[1] ).T
-    print( "loaded " + str(obs1.shape) )
-    obsT = obs1.T
-    obs = ((obsT)[~numpy.isnan(obsT).any(axis=1)]).T
-    print( "after nan rm " + str(obs.shape) )
-
-d = initializer( obs )
-
-(low_bin, mid_bin, high_bin) = find_bins( d )
-print("Recounting")
-(low_bin, mid_bin, high_bin) = recount_bins( d )
-
-while True:
-    r = rebalance( d )
-    if (r is None):
-        print("Rebalanced: None")
-        break
+    if test == "sort":
+        aa
+    elif test == "test1":
+        data = [ [0,10,20,30,40,50,60,70,80,90,100,110,120], [5,1,5,6,5,2,4,8,2,3,1,2,4] ]
+        obs = numpy.array(data)
+        #a=datastack[:,datastack[1,:].argsort()]
+        #print(datastack)
     else:
-        print("Rebalanced: "+str(r))
-        print( d["bin_count"] )
-        print( d["bin_boundary"] )
+        obs1 = numpy.loadtxt( sys.argv[1] ).T
+        print( "loaded " + str(obs1.shape) )
+        obsT = obs1.T
+        obs = ((obsT)[~numpy.isnan(obsT).any(axis=1)]).T
+        print( "after nan rm " + str(obs.shape) )
+
+    d = initializer( obs )
+
+    (low_bin, mid_bin, high_bin) = find_bins( d )
     print("Recounting")
     (low_bin, mid_bin, high_bin) = recount_bins( d )
 
-populate_bins( d, low_bin, mid_bin, high_bin )
+    while True:
+        r = rebalance( d )
+        if (r is None):
+            print("Rebalanced: None")
+            break
+        else:
+            print("Rebalanced: "+str(r))
+            print( d["bin_count"] )
+            print( d["bin_boundary"] )
+        print("Recounting")
+        (low_bin, mid_bin, high_bin) = recount_bins( d )
 
-(value_low,value_med,value_high) = get_percentiles( d )
+    populate_bins( d, low_bin, mid_bin, high_bin )
 
-print( (value_low,value_med,value_high) )
+    (value_low,value_med,value_high) = get_percentiles( d )
+
+    print( (value_low,value_med,value_high) )

@@ -19,6 +19,7 @@ import scipy.stats
 
 # Import from this package
 from . import mk_tools as mkt
+from . import median_slope_bins as bins
 
 def std_normal_var(s, var_s):
     """ Compute the normal standard variable Z.
@@ -51,7 +52,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -107,6 +108,28 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         a = float(alpha_cl) / 100
         (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='joint' )
         #(slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='separate' )
+    elif method == "bins":
+        # TODO: write an iterative NaN remover
+        obsT = obs.T
+        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
+        a = float(alpha_cl) / 100
+        d = bins.initializer( good )
+        (low_bin, mid_bin, high_bin) = bins.find_bins( d )
+        (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
+        while True:
+            r = bins.rebalance( d )
+            if (r is None):
+                print("Rebalanced: None")
+                break
+            else:
+                print("Rebalanced: "+str(r))
+                print( d["bin_count"] )
+                print( d["bin_boundary"] )
+            print("Recounting")
+            (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
+        bins.populate_bins( d, low_bin, mid_bin, high_bin )
+        (lcl,slope,ucl) = bins.get_percentiles( d )
+        
     else:
         # Let's compute the slope for all the possible pairs.
         d = np.array([item for i in range(0, rows-1)
