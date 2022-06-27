@@ -12,8 +12,14 @@ This file contains the core statistical routines for the package.
 """
 
 # Import the required packages
+import heapq
 from datetime import datetime
+from contextlib import ExitStack
 import copy
+import os
+import subprocess
+import tempfile
+import uuid
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -55,7 +61,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -79,6 +85,13 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
                               "bins": Estimates the slope distributions and uses this estimate
                               to only build three small parts of the complete n(n-1)/2 array of
                               slopes, thoses that contain the median slope and the lcl, ucl.
+                              "brute-disk": same as brute but instead of building the numpy array of slopes, 
+                              writes the computed values in a file under TMPDIR, sorts the file using bash sort 
+                              and gets the median using bash sed.
+                              "brute-disk": same as brute but instead of building the numpy array of slopes,
+                              writes the computed values in a file under TMPDIR and sorts the file using bash sort
+                              "brute-sparse": same as brute, but also computes confidence limits
+                              with an interpolation. When datapoints are few.
 
     Return:
         (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
@@ -165,6 +178,82 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
         
+
+    elif method == "brute-disk":
+
+        slopes_dir = os.path.join(tempfile.gettempdir(), 'slopes_' + str(uuid.uuid4()))
+
+        os.makedirs(slopes_dir)
+
+        tmp_array_l = 400000000
+        tmp_array_last_index = tmp_array_l - 1
+
+        tmp_array = np.empty(tmp_array_l)
+
+        tmp_files = []
+
+        tmp_array_c = 0
+
+        # compute the slopes
+        for i in range(0, rows-1):
+            for j in range(i + 1, rows):
+
+                val = (obs[1, j] - obs[1, i]) / (obs[0, j] - obs[0, i])
+
+                tmp_array[tmp_array_c] = val
+
+                if tmp_array_c == tmp_array_last_index:
+                    tmp_array.sort()
+                    out_file = slopes_dir + os.sep + str(uuid.uuid4())
+                    np.savetxt(out_file, tmp_array)
+                    tmp_files.append(out_file)
+                    tmp_array_c = 0
+                else:
+                    tmp_array_c += 1
+
+        if tmp_array_c != 0:  # write remaining values
+            tmp_array = tmp_array[:tmp_array_c]
+            tmp_array.sort()
+            out_file = slopes_dir + os.sep + str(uuid.uuid4())
+            np.savetxt(out_file, tmp_array)
+            tmp_files.append(out_file)
+
+        if l % 2 == 1:
+            median_pos = l // 2
+            is_even = False
+        else:
+            median_pos = (l - 1) // 2
+            median_pos_2 = median_pos + 1
+            is_even = True
+
+        m_1_pos = int(m_1)
+        m_2_pos = int(m_2)
+
+        break_limit = max([median_pos, median_pos+1, m_1_pos, m_2_pos])
+
+        with ExitStack() as stack:
+
+            files = [stack.enter_context(open(fname, 'r')) for fname in tmp_files]
+
+            line_num = 0
+
+            for line in heapq.merge(*files, key=float):
+
+                if line_num > break_limit:
+                    break
+                if line_num == m_1_pos:
+                    lcl = float(line)
+                if line_num == median_pos:
+                    slope = float(line)
+                elif is_even and line_num == median_pos_2:
+                    slope = (float(slope) + float(line)) / 2
+                if line_num == m_2_pos:
+                    ucl = float(line)
+                line_num += 1
+
+        for f in tmp_files:
+            os.remove(f)
+        # TODO remove the temporary directory
 
     else:
         # Make an array with all the possible pairs.
