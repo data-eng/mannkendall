@@ -14,6 +14,10 @@ This file contains the core statistical routines for the package.
 # Import the required packages
 from datetime import datetime
 import copy
+import os
+import subprocess
+import tempfile
+import uuid
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -79,6 +83,11 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
                               "bins": Estimates the slope distributions and uses this estimate
                               to only build three small parts of the complete n(n-1)/2 array of
                               slopes, thoses that contain the median slope and the lcl, ucl.
+                              "brute-disk": same as brute but instead of building the numpy array of slopes, 
+                              writes the computed values in a file under TMPDIR, sorts the file using bash sort 
+                              and gets the median using bash sed.
+                              "brute-sparse": same as brute, but also computes confidence limits
+                              with an interpolation. When datapoints are few.
 
     Return:
         (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
@@ -165,6 +174,58 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
         
+
+    elif method == "brute-disk":
+
+        # remove rows containing numpy.nan
+        obs = obs[~np.isnan(obs).any(axis=1)]
+
+        (obs_lenth, _) = obs.shape
+
+        # store slopes in a file with prefix slopes_{uuid4} 
+        slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
+
+        with open(slopes_file, 'w') as f:
+
+            # compute the slopes
+            for i in range(0, obs_lenth-1):
+                for j in range(i + 1, obs_lenth):
+
+                    val = obs[j, 1] - obs[i, 1] / obs[j, 0] - obs[i, 0]
+                    f.write(f'{val}\n')
+
+        # file to store the sorted values
+        sorted_slopes_file = slopes_file + '_sorted'
+
+        with open(sorted_slopes_file, 'w') as f:
+            subprocess.run(['sort', '-n', slopes_file], stdout=f, check=True)
+
+        # remove the slopes file to clean up space
+        subprocess.run(['rm', slopes_file], check=True)
+
+        slopes_lenght = int(obs_lenth * (obs_lenth - 1) / 2)
+
+        if slopes_lenght % 2 == 1:
+            pos = int((slopes_lenght + 1) / 2)
+            slope = float(subprocess.run(['sed', '-n', f'{pos}p;{pos}q', sorted_slopes_file], capture_output=True, check=True).stdout)
+        else:
+            pos = int(slopes_lenght / 2)
+            res = subprocess.run(['sed', '-n', f'{pos},{pos + 1}p;{pos + 1}q', sorted_slopes_file], capture_output=True, check=True).stdout
+            l = res.splitlines()
+            val1 = float(l[0])
+            val2 = float(l[1])
+            slope = (val1 + val2) / 2
+
+        # remove the sorted file
+        subprocess.run(['rm', sorted_slopes_file], check=True)
+
+        # Apply the confidence limits
+        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
+
+        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
+        # values of m_1 and m_2 to match the matlab implementation.
+        m_1 = (0.5 * (slopes_lenght - cconf)) - 1
+        m_2 = (0.5 * (slopes_lenght + cconf)) - 1
 
     else:
         # Make an array with all the possible pairs.
