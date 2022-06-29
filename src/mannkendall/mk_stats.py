@@ -86,6 +86,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
                               "brute-disk": same as brute but instead of building the numpy array of slopes, 
                               writes the computed values in a file under TMPDIR, sorts the file using bash sort 
                               and gets the median using bash sed.
+                              "brute-disk": same as brute but instead of building the numpy array of slopes,
+                              writes the computed values in a file under TMPDIR and sorts the file using bash sort
                               "brute-sparse": same as brute, but also computes confidence limits
                               with an interpolation. When datapoints are few.
 
