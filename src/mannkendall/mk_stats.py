@@ -206,26 +206,37 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         slopes_length = int(obs_length * (obs_length - 1) / 2)
 
         if slopes_length % 2 == 1:
-            pos = int((slopes_length + 1) / 2)
-            slope = float(subprocess.run(['sed', '-n', f'{pos}p;{pos}q', sorted_slopes_file], capture_output=True, check=True).stdout)
+            median_pos = slopes_length // 2
+            is_even = False
         else:
-            pos = int(slopes_length / 2)
-            res = subprocess.run(['sed', '-n', f'{pos},{pos + 1}p;{pos + 1}q', sorted_slopes_file], capture_output=True, check=True).stdout
-            l = res.splitlines()
-            val1 = float(l[0])
-            val2 = float(l[1])
-            slope = (val1 + val2) / 2
-
-        # remove the sorted file
-        subprocess.run(['rm', sorted_slopes_file], check=True)
+            median_pos = (slopes_length - 1) // 2
+            is_even = True
 
         # Apply the confidence limits
         cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
 
         # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
         # values of m_1 and m_2 to match the matlab implementation.
-        m_1 = (0.5 * (slopes_length - cconf)) - 1
-        m_2 = (0.5 * (slopes_length + cconf)) - 1
+        m_1 = int((0.5 * (slopes_length - cconf)) - 1)
+        m_2 = int((0.5 * (slopes_length + cconf)) - 1)
+
+        line_num = 0
+
+        with open(sorted_slopes_file) as f:
+            for line in f:
+                if line_num == m_1:
+                    lcl = line
+                elif line_num == median_pos:
+                    slope = line
+                elif is_even and line_num == (median_pos + 1):
+                    slope = (float(slope) + float(line)) / 2
+                elif line_num == m_2:
+                    ucl = line
+                    break
+                line_num += 1
+
+        # remove the sorted file
+        subprocess.run(['rm', sorted_slopes_file], check=True)
 
     else:
         # Make an array with all the possible pairs.
