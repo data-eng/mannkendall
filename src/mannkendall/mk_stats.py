@@ -184,7 +184,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
 
         (_, obs_length) = obs.shape
 
-        # store slopes in a file with prefix slopes_{uuid4} 
+        # store slopes in a file with prefix slopes_{uuid4}
         slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
 
         with open(slopes_file, 'w') as f:
