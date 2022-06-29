@@ -180,7 +180,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         # remove rows containing numpy.nan
         obs = obs[~np.isnan(obs).any(axis=1)]
 
-        (obs_lenth, _) = obs.shape
+        (obs_length, _) = obs.shape
 
         # store slopes in a file with prefix slopes_{uuid4} 
         slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
@@ -188,8 +188,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         with open(slopes_file, 'w') as f:
 
             # compute the slopes
-            for i in range(0, obs_lenth-1):
-                for j in range(i + 1, obs_lenth):
+            for i in range(0, obs_length-1):
+                for j in range(i + 1, obs_length):
 
                     val = obs[j, 1] - obs[i, 1] / obs[j, 0] - obs[i, 0]
                     f.write(f'{val}\n')
@@ -203,13 +203,13 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         # remove the slopes file to clean up space
         subprocess.run(['rm', slopes_file], check=True)
 
-        slopes_lenght = int(obs_lenth * (obs_lenth - 1) / 2)
+        slopes_length = int(obs_length * (obs_length - 1) / 2)
 
-        if slopes_lenght % 2 == 1:
-            pos = int((slopes_lenght + 1) / 2)
+        if slopes_length % 2 == 1:
+            pos = int((slopes_length + 1) / 2)
             slope = float(subprocess.run(['sed', '-n', f'{pos}p;{pos}q', sorted_slopes_file], capture_output=True, check=True).stdout)
         else:
-            pos = int(slopes_lenght / 2)
+            pos = int(slopes_length / 2)
             res = subprocess.run(['sed', '-n', f'{pos},{pos + 1}p;{pos + 1}q', sorted_slopes_file], capture_output=True, check=True).stdout
             l = res.splitlines()
             val1 = float(l[0])
@@ -224,8 +224,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
 
         # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
         # values of m_1 and m_2 to match the matlab implementation.
-        m_1 = (0.5 * (slopes_lenght - cconf)) - 1
-        m_2 = (0.5 * (slopes_lenght + cconf)) - 1
+        m_1 = (0.5 * (slopes_length - cconf)) - 1
+        m_2 = (0.5 * (slopes_length + cconf)) - 1
 
     else:
         # Make an array with all the possible pairs.
