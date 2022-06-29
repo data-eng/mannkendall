@@ -180,7 +180,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         # remove rows containing numpy.nan
         obs = obs[~np.isnan(obs).any(axis=1)]
 
-        (obs_length, _) = obs.shape
+        (_, obs_length) = obs.shape
 
         # store slopes in a file with prefix slopes_{uuid4} 
         slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
@@ -191,7 +191,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
             for i in range(0, obs_length-1):
                 for j in range(i + 1, obs_length):
 
-                    val = obs[j, 1] - obs[i, 1] / obs[j, 0] - obs[i, 0]
+                    val = obs[1, j] - obs[1, i] / obs[0, j] - obs[0, i]
                     f.write(f'{val}\n')
 
         # file to store the sorted values
