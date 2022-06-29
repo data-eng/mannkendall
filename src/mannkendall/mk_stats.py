@@ -228,13 +228,12 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
             for line in f:
                 if line_num == m_1:
                     lcl = line
-                elif line_num == median_pos:
+                if line_num == median_pos:
                     slope = line
                 elif is_even and line_num == (median_pos + 1):
                     slope = (float(slope) + float(line)) / 2
-                elif line_num == m_2:
+                if line_num == m_2:
                     ucl = line
-                    break
                 line_num += 1
 
         # remove the sorted file
