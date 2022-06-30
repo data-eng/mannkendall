@@ -59,7 +59,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
