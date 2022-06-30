@@ -122,16 +122,31 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         l = len(d)
         if l % 2 == 1:
             slope = d[(l-1)//2]
+            # these m_1, m_2 defaults will be overriden below
+            # unless cconf is very low
+            m_1 = (l-1)//2 - 1
+            m_2 = (l-1)//2 + 1
         else:
             slope = (d[l//2-1]+d[l//2])/2
+            # these m_1, m_2 defaults will be overriden below
+            # unless cconf is very low
+            m_1 = l//2 - 2
+            m_2 = l//2 + 1
 
         # Apply the confidence limits
-        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
+        kvarroot = k_var**0.5
+        if np.isnan(kvarroot):
+            # if k_var is small, the sqrt is a NaN and a RuntimeWarning is issued.
+            # For such low cconf, default to the values on either side of the median.
+            cconf = 0.0
+            # Keep the default m_1, m_2 values from above
+        else:
+            cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * kvarroot
+            # Note: because python starts at 0 and not 1, we need an additional "-1" to
+            # the following values of m_1 and m_2 to match the matlab implementation.
+            m_1 = (0.5 * (len(d) - cconf)) - 1
+            m_2 = (0.5 * (len(d) + cconf)) - 1
 
-        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
-        # values of m_1 and m_2 to match the matlab implementation.
-        m_1 = (0.5 * (len(d) - cconf)) - 1
-        m_2 = (0.5 * (len(d) + cconf)) - 1
 
         if method == "brute-sparse":
             # Interpolate when datapoints are sparse
