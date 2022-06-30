@@ -203,7 +203,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
             subprocess.run(['sort', '-n', slopes_file], stdout=f, check=True)
 
         # remove the slopes file to clean up space
-        subprocess.run(['rm', slopes_file], check=True)
+        os.remove(slopes_file)
 
         slopes_length = int(obs_length * (obs_length - 1) / 2)
 
@@ -237,7 +237,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
                 line_num += 1
 
         # remove the sorted file
-        subprocess.run(['rm', sorted_slopes_file], check=True)
+        os.remove(sorted_slopes_file)
 
     else:
         # Make an array with all the possible pairs.
