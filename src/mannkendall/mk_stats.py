@@ -98,16 +98,30 @@ def sen_slope(obs_dts, obs, k_var, alpha_cl=90.):
     l = len(d)
     if l % 2 == 1:
         slope = d[(l-1)//2]
+        # these m_1, m_2 defaults will be overriden below
+        # unless cconf is very low
+        m_1 = (l-1)//2 - 1
+        m_2 = (l-1)//2 + 1
     else:
         slope = (d[l//2-1]+d[l//2])/2
+        # these m_1, m_2 defaults will be overriden below
+        # unless cconf is very low
+        m_1 = l//2 - 2
+        m_2 = l//2 + 1
 
     # Apply the confidence limits
-    cconf = -norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
-
-    # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
-    # values of m_1 and m_2 to match the matlab implementation.
-    m_1 = (0.5 * (len(d) - cconf)) - 1
-    m_2 = (0.5 * (len(d) + cconf)) - 1
+    kvarroot = k_var**0.5
+    if np.isnan(kvarroot):
+        # if k_var is small, the sqrt is NaN and a RuntimeWarning is issued.
+        # For such low cconf, keep the default m_1, m_2 values from above
+        # (ie, the values on either side of the median).
+        cconf = 0.0
+    else:
+        cconf = -norm.ppf((1-alpha_cl/100)/2) * kvarroot
+        # Note: because python starts at 0 and not 1, we need an additional "-1" to
+        # the following values of m_1 and m_2 to match the matlab implementation.
+        m_1 = (0.5 * (len(d) - cconf)) - 1
+        m_2 = (0.5 * (len(d) + cconf)) - 1
 
     # Let's setup a quick interpolation scheme to get the best possible confidence limits
     f = interp1d(np.arange(0, len(d), 1), d, kind='linear',
