@@ -15,7 +15,6 @@ This file contains useful tools for the package.
 import numpy as np
 import datetime
 from scipy import stats as spstats
-
 from statsmodels.tsa import stattools
 
 
