@@ -229,9 +229,9 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         line_num = 0
 
         with open(sorted_slopes_file) as f:
-            if line_num > break_limit:
-                break_limit
             for line in f:
+                if line_num > break_limit:
+                    break
                 if line_num == m_1:
                     lcl = line
                 if line_num == median_pos:
