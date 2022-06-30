@@ -212,6 +212,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
             is_even = False
         else:
             median_pos = (slopes_length - 1) // 2
+            median_pos_2 = median_pos + 1
             is_even = True
 
         # Apply the confidence limits
@@ -222,15 +223,19 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
         m_1 = int((0.5 * (slopes_length - cconf)) - 1)
         m_2 = int((0.5 * (slopes_length + cconf)) - 1)
 
+        break_limit = max([median_pos, median_pos+1, m_1, m_2])
+
         line_num = 0
 
         with open(sorted_slopes_file) as f:
+            if line_num > break_limit:
+                break_limit
             for line in f:
                 if line_num == m_1:
                     lcl = line
                 if line_num == median_pos:
                     slope = line
-                elif is_even and line_num == (median_pos + 1):
+                elif is_even and line_num == median_pos_2:
                     slope = (float(slope) + float(line)) / 2
                 if line_num == m_2:
                     ucl = line
