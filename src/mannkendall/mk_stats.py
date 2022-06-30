@@ -180,7 +180,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-sparse' ):
     elif method == "brute-disk":
 
         # remove rows containing numpy.nan
-        obs = obs[~np.isnan(obs).any(axis=1)]
+        obsT = obs.T
+        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
 
         (_, obs_length) = obs.shape
 
