@@ -9,7 +9,7 @@ def initializer( obs ):
     retv["obs"] = obs
     # Three arrays of up-to-this size will be needed
     # for the second pass
-    retv["max_size"] = 1000000
+    retv["max_size"] = 4000000
     retv["trace"] = True
     # These are the three arrays
     retv["lo"] = None

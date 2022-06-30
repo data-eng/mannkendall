@@ -53,7 +53,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -149,14 +149,14 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         l = len(d)
         if l % 2 == 1:
             slope = d[(l-1)//2]
-            # these m_1, m_2 defaults will be overriden below
-            # unless cconf is very low
+            # these m_1, m_2 defaults will be overriden below,
+            # unless k_var is very low
             m_1 = (l-1)//2 - 1
             m_2 = (l-1)//2 + 1
         else:
             slope = (d[l//2-1]+d[l//2])/2
-            # these m_1, m_2 defaults will be overriden below
-            # unless cconf is very low
+            # these m_1, m_2 defaults will be overriden below,
+            # unless k_var is very low
             m_1 = l//2 - 2
             m_2 = l//2 + 1
 
@@ -164,7 +164,9 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         kvarroot = k_var**0.5
         if np.isnan(kvarroot):
             # if k_var is small, the sqrt is a NaN and a RuntimeWarning is issued.
-            # For such low cconf, default to the values on either side of the median.
+            # cconf is effectively zero, so m_1 and m_2 are the same as the median.
+            # In this case, default to the values on either side of the median to
+            # ensure m_1 < median < m_2
             cconf = 0.0
             # Keep the default m_1, m_2 values from above
         else:
