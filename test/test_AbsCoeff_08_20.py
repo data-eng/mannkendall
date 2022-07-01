@@ -32,6 +32,7 @@ def test_prewhite( basename ):
             assert mse < 1E-3
     except FileNotFoundError:
         print("New prewhites. Must record.")
+        numpy.savetxt( basename + ".pw.csv", my_whites["pw"] )
 
     try:
         diff = my_whites["pw_cor"] - numpy.loadtxt( basename + ".pw_cor.csv" )
@@ -42,6 +43,7 @@ def test_prewhite( basename ):
             assert mse < 1E-3
     except FileNotFoundError:
         print("New prewhites. Must record.")
+        numpy.savetxt( basename + ".pw_cor.csv", my_whites["pw_cor"] )
 
     try:
         diff = my_whites["tfpw_y"] - numpy.loadtxt( basename + ".tfpw_y.csv" )
@@ -51,7 +53,8 @@ def test_prewhite( basename ):
         else:
             assert mse < 1E-3
     except FileNotFoundError:
-        mse = None
+        print("New prewhites. Must record.")
+        numpy.savetxt( basename + ".tfpw_y.csv", my_whites["tfpw_y"] )
  
     try:
         diff = my_whites["tfpw_ws"] - numpy.loadtxt( basename + ".tfpw_ws.csv" )
@@ -62,7 +65,7 @@ def test_prewhite( basename ):
             assert mse < 1E-3
     except FileNotFoundError:
         print("New prewhites. Must record.")
-        #numpy.savetxt( "strange.tfpw_ws.csv", my_whites["tfpw_ws"] )
+        numpy.savetxt( basename + ".tfpw_ws.csv", my_whites["tfpw_ws"] )
 
     try:
         diff = my_whites["vctfpw"] - numpy.loadtxt( basename + ".vctfpw.csv" )
@@ -73,7 +76,7 @@ def test_prewhite( basename ):
             assert mse < 1E-3
     except FileNotFoundError:
         print("New prewhites. Must record.")
-        #numpy.savetxt( "strange.tfpw_ws.csv", my_whites["tfpw_ws"] )
+        numpy.savetxt( basename + ".vctfpw.csv", my_whites["vctfpw"] )
 
     return my_whites
     
@@ -81,7 +84,6 @@ def test_prewhite( basename ):
 def test_compute_mk_stat( basename ):
     d = numpy.loadtxt( basename + ".csv" ).T
     ts = numpy.array( [mkt.mat2datetime(t) for t in d[0]] )
-    #ts = d[0,:]
 
     try:
         good_results = numpy.loadtxt( basename + ".results.csv" )
@@ -94,8 +96,6 @@ def test_compute_mk_stat( basename ):
         w = my_whites["pw"]
     else:
         w = numpy.loadtxt( basename + ".pw.csv" )
-    #dd = numpy.stack( (ts,w), axis=0 )
-    #(result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
     (result, s, vari, z) = mk.compute_mk_stat( ts, w, 0.2 )
     if report:
         print((result, s, vari, z))
@@ -113,8 +113,6 @@ def test_compute_mk_stat( basename ):
         w = my_whites["pw_cor"]
     else:
         w = numpy.loadtxt( basename + ".pw_cor.csv" )
-    #dd = numpy.stack( (ts,w), axis=0 )
-    #(result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
     (result, s, vari, z) = mk.compute_mk_stat( ts, w, 0.2 )
     if report:
         print((result, s, vari, z))
@@ -132,8 +130,6 @@ def test_compute_mk_stat( basename ):
         w = my_whites["tfpw_y"]
     else:
         w = numpy.loadtxt( basename + ".tfpw_y.csv" )
-    #dd = numpy.stack( (ts,w), axis=0 )
-    #(result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
     (result, s, vari, z) = mk.compute_mk_stat( ts, w, 0.2 )
     if report:
         print((result, s, vari, z))
@@ -151,8 +147,6 @@ def test_compute_mk_stat( basename ):
         w = my_whites["tfpw_ws"]
     else:
         w = numpy.loadtxt( basename + ".tfpw_ws.csv" )
-    #dd = numpy.stack( (ts,w), axis=0 )
-    #(result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
     (result, s, vari, z) = mk.compute_mk_stat( ts, w, 0.2 )
     if report:
         print((result, s, vari, z))
@@ -170,8 +164,6 @@ def test_compute_mk_stat( basename ):
         w = my_whites["vctfpw"]
     else:
         w = numpy.loadtxt( basename + ".vctfpw.csv" )
-    #dd = numpy.stack( (ts,w), axis=0 )
-    #(result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
     (result, s, vari, z) = mk.compute_mk_stat( ts, w, 0.2 )
     if report:
         print((result, s, vari, z))
@@ -186,7 +178,7 @@ def test_compute_mk_stat( basename ):
         assert z    - good_results[4][7] < 1E-8
 
 
-report = False
+report = True
 redo_prewhite = True
 
 
