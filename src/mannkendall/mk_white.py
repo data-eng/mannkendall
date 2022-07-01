@@ -218,7 +218,7 @@ def prewhite( obs, resolution, alpha_ak=95 ):
             if (ak_pw >= 0.05) & (ss_pw == 95):
 
                 nb_loop += 1
-                data_detrend_pw = obs[1,:] - b1_pw * mkt.dt_to_s(obs[0,:]-obs[0,0])
+                data_detrend_pw = obs[1,:] - b1_pw * mkt.days_to_s(obs[0,:]-obs[0,0])
                 c_1 = copy.copy(ak_pw)
                 b0_pw = copy.copy(b1_pw)
                 (ak_pw, data_ar_removed2_pw, ss_pw) = \
@@ -232,9 +232,9 @@ def prewhite( obs, resolution, alpha_ak=95 ):
 
                     t = mkt.nb_tie(data_ar_removed2_pw[1,:], resolution)
                     (_, n) = mks.s_test(data_ar_removed2_pw)
-                    vari = mkt.kendall_var(data_ar_removed2_pw, t, n)
+                    vari = mkt.kendall_var(data_ar_removed2_pw[1,:], t, n)
                     (b1_pw, _, _) = mks.sen_slope(data_ar_removed2_pw, vari)
-                    data_ar_removed_pw = copy.copy(data_ar_removed2_pw)
+                    data_ar_removed_pw = copy.copy(data_ar_removed2_pw[1,:])
 
                     if nb_loop > 10:
                         break
