@@ -13,6 +13,8 @@ This file contains the core statistical routines for the package.
 
 # Import the required packages
 from datetime import datetime
+import copy
+
 import numpy as np
 from scipy.interpolate import interp1d
 import scipy.stats
@@ -53,7 +55,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -90,9 +92,54 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     if not isinstance(k_var, (int, float)):
         raise Exception('Ouch ! The variance must be of type float, not: %s' % (type(k_var)))
 
+
+    # NaN removal
+    #obsT = obs.T
+    #good1 = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
+    good_values = ~np.isnan(obs[1])
+    good2 = np.array([ obs[0][good_values], obs[1][good_values] ])
+    obs = copy.copy(good2)
+    obs[0] = mkt.days_to_s(obs[0])
+    
     (cols,rows) = obs.shape
     if cols != 2:
         raise Exception( "There must be two columns in obs" )
+
+    # Besides the median, we will also need the confidence limits.
+    # Here we calculate the indexes for the lcl and the ucl
+
+    l = (rows-1)*(rows-2)/2
+    if l % 2 == 1:
+        slope_idx_1 = (l-1)//2
+        slope_idx_2 = (l-1)//2
+        # these m_1, m_2 defaults will be overriden below,
+        # unless k_var is very low
+        m_1 = (l-1)//2 - 1
+        m_2 = (l-1)//2 + 1
+    else:
+        slope_idx_1 = l//2-1
+        slope_idx_2 = l//2
+        # these m_1, m_2 defaults will be overriden below,
+        # unless k_var is very low
+        m_1 = l//2 - 2
+        m_2 = l//2 + 1
+
+    # Apply the confidence limits
+    kvarroot = k_var**0.5
+    if np.isnan(kvarroot):
+        # if k_var is small, the sqrt is a NaN and a RuntimeWarning is issued.
+        # cconf is effectively zero, so m_1 and m_2 are the same as the median.
+        # In this case, default to the values on either side of the median to
+        # ensure m_1 < median < m_2
+        cconf = 0.0
+        # Keep the default m_1, m_2 values from above
+    else:
+        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * kvarroot
+        # Note: because python starts at 0 and not 1, we need an additional "-1" to
+        # the following values of m_1 and m_2 to match the matlab implementation.
+        m_1 = (0.5 * (l - cconf)) - 1
+        m_2 = (0.5 * (l + cconf)) - 1
+
 
     if method == "siegel":
         # TODO: write an iterative NaN remover
@@ -112,11 +159,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
 
 
     elif method == "bins":
-        # TODO: write an iterative NaN remover
-        obsT = obs.T
-        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
         a = float(alpha_cl) / 100
-        d = bins.initializer( good )
+        d = bins.initializer( obs )
         (low_bin, mid_bin, high_bin) = bins.find_bins( d )
         (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         while True:
@@ -135,47 +179,18 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
         
 
     else:
-        # Let's compute the slope for all the possible pairs.
-        d = np.array([item for i in range(0, rows-1)
-                      for item in list((obs[1,i+1:rows] - obs[1,i])/mkt.days_to_s(obs[0,i+1:rows] - obs[0,i]))])
-
-        # Only keep valid values
-        d = d[~np.isnan(d)]
-        # Sort
-        # This will get us the median, and is
-        # also needed for interpolation below
+        # Make an array with all the possible pairs.
+        ll = len(obs[1])
+        d = np.array([item for i in range(0, ll-1)
+                      for item in list((obs[1][i+1:ll] - obs[1][i])/(obs[0][i+1:ll] - obs[0][i]))])
         d.sort()
-
+        print(l)
+        print(len(d))
         l = len(d)
         if l % 2 == 1:
             slope = d[(l-1)//2]
-            # these m_1, m_2 defaults will be overriden below,
-            # unless k_var is very low
-            m_1 = (l-1)//2 - 1
-            m_2 = (l-1)//2 + 1
         else:
             slope = (d[l//2-1]+d[l//2])/2
-            # these m_1, m_2 defaults will be overriden below,
-            # unless k_var is very low
-            m_1 = l//2 - 2
-            m_2 = l//2 + 1
-
-        # Apply the confidence limits
-        kvarroot = k_var**0.5
-        if np.isnan(kvarroot):
-            # if k_var is small, the sqrt is a NaN and a RuntimeWarning is issued.
-            # cconf is effectively zero, so m_1 and m_2 are the same as the median.
-            # In this case, default to the values on either side of the median to
-            # ensure m_1 < median < m_2
-            cconf = 0.0
-            # Keep the default m_1, m_2 values from above
-        else:
-            cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * kvarroot
-            # Note: because python starts at 0 and not 1, we need an additional "-1" to
-            # the following values of m_1 and m_2 to match the matlab implementation.
-            m_1 = (0.5 * (len(d) - cconf)) - 1
-            m_2 = (0.5 * (len(d) + cconf)) - 1
-
 
         if method == "brute-sparse":
             # Interpolate when datapoints are sparse

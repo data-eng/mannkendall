@@ -19,6 +19,10 @@ def initializer( obs ):
     (_,l) = obs.shape
     n = (l-2)*(l-1)/2
     retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
+    # it is best to have odd nbins, just in case we are too successful
+    # in balancing them and calculating the needs values from different bins
+    if retv["num_bins"]%2 == 0:
+        retv["num_bins"] += 1
     retv["bin_boundary"] = []
 
     # We need the distribution of the slopes to set good
@@ -31,22 +35,29 @@ def initializer( obs ):
         sampler = 16
     if l > 32768:
         sampler = 16384
+    if retv["trace"]:
+        print("For "+str(l)+" observations, sampling one out of "+str(sampler))
     for i in range(1,l):
         if i%sampler == 0:
             for j in range(i+1,l):
-                if not (numpy.isnan(obs[1][i]) or numpy.isnan(obs[1][j])):
-                    slope = (obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
-                    slope_sample.append( slope )
+                assert not numpy.isnan(obs[1][i])
+                assert not numpy.isnan(obs[1][j])
+                slope = (obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+                slope_sample.append( slope )
+
     slope_sample.sort()
-    step = len(slope_sample) // (retv["num_bins"]+1)
-    print(step)
-    for i in range( 0, len(slope_sample), step ):
+    step = 1 + (len(slope_sample) // retv["num_bins"])
+    for i in range( step, len(slope_sample), step ):
         retv["bin_boundary"].append( slope_sample[i] )
+    if not ( len(retv["bin_boundary"]) == retv["num_bins"]-1 ):
+        print("This should never happen: poping last boundary")
+        retv["bin_boundary"].pop()
 
     retv["bin_count"] = numpy.array( [0] * retv["num_bins"] )
     if retv["trace"]:
-        print( retv["bin_boundary"] )
-        print( retv["bin_count"] )
+        print("Init:")
+        print("Bin counts: " + str(retv["bin_count"]) )
+        print("Bin boundaries: " + str(retv["bin_boundary"]) )
     
     return retv
 
@@ -200,8 +211,8 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
     d["n"] = n
     if d["trace"]:
         print("First pass:")
-        print( d["bin_count"] )
-        print( d["bin_boundary"] )
+        print("Bin counts: " + str(d["bin_count"]) )
+        print("Bin boundaries: " + str(d["bin_boundary"]) )
 
     percentile05 = low  * float(n)
     percentile50 = med  * float(n)
@@ -238,8 +249,8 @@ def recount_bins( d ):
     d["n"] = n
     if d["trace"]:
         print("Second pass:")
-        print( d["bin_count"] )
-        print( d["bin_boundary"] )
+        print("Bin counts: " + str(d["bin_count"]) )
+        print("Bin boundaries: " + str(d["bin_boundary"]) )
 
     percentile05 = d["percentile"]["low"]  * float(n)
     percentile50 = d["percentile"]["med"]  * float(n)
