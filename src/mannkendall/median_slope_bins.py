@@ -17,31 +17,32 @@ def initializer( obs ):
     retv["hi"] = None
 
     (_,l) = obs.shape
-    min = None
-    max = None
-    for i in range(1,l):
-        slope = float(obs[1][i]-obs[1][i-1]) / float(obs[0][i]-obs[0][i-1])
-        try:
-            if slope < min: min = slope
-        except TypeError:
-            min = slope
-        try:
-            if slope > max: max = slope
-        except TypeError:
-            max = slope
-
     n = (l-2)*(l-1)/2
-    retv["num_bins"] = 10 * int(1 + n // retv["max_size"])
-    bin_width = (max-min)/retv["num_bins"]
-    if retv["trace"]:
-        print( "Init: " + str(retv["num_bins"]) + " bins for " + str(n) + " items from " + str(min) + " to " + str(max)  )
-        print( "bin_width is " + str(bin_width) )
-    q = []
-    b = min+bin_width
-    while( b < max ):
-        q.append( b )
-        b += bin_width
-    retv["bin_boundary"] = numpy.array( q )
+    retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
+    retv["bin_boundary"] = []
+
+    # We need the distribution of the slopes to set good
+    # bin boundaries. We will sample the data to estimate it.
+    slope_sample=[]
+    sampler = 1
+    if l > 2048:
+        sampler = 2
+    if l > 8192:
+        sampler = 16
+    if l > 32768:
+        sampler = 16384
+    for i in range(1,l):
+        if i%sampler == 0:
+            for j in range(i+1,l):
+                if not (numpy.isnan(obs[1][i]) or numpy.isnan(obs[1][j])):
+                    slope = (obs[1][j]-obs[1][i]) / float(obs[0][j]-obs[0][i])
+                    slope_sample.append( slope )
+    slope_sample.sort()
+    step = len(slope_sample) // (retv["num_bins"]+1)
+    print(step)
+    for i in range( 0, len(slope_sample), step ):
+        retv["bin_boundary"].append( slope_sample[i] )
+
     retv["bin_count"] = numpy.array( [0] * retv["num_bins"] )
     if retv["trace"]:
         print( retv["bin_boundary"] )
