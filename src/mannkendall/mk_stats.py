@@ -212,17 +212,20 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
         line_num = 0
 
+        m_1_pos = int(m_1)
+        m_2_pos = int(m_2)
+
         with open(sorted_slopes_file) as f:
             for line in f:
                 if line_num > break_limit:
                     break
-                if line_num == m_1:
+                if line_num == m_1_pos:
                     lcl = line
                 if line_num == median_pos:
                     slope = line
                 elif is_even and line_num == median_pos_2:
                     slope = (float(slope) + float(line)) / 2
-                if line_num == m_2:
+                if line_num == m_2_pos:
                     ucl = line
                 line_num += 1
 
