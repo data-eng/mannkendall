@@ -108,7 +108,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
     # Besides the median, we will also need the confidence limits.
     # Here we calculate the indexes for the lcl and the ucl
 
-    l = (rows-1)*(rows-2)/2
+    # The num of slopes is Sum rows-1, rows-2, ... 1 = rows*(rows-1)/2
+    l = rows*(rows-1)/2
     if l % 2 == 1:
         slope_idx_1 = (l-1)//2
         slope_idx_2 = (l-1)//2
@@ -184,8 +185,6 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         d = np.array([item for i in range(0, ll-1)
                       for item in list((obs[1][i+1:ll] - obs[1][i])/(obs[0][i+1:ll] - obs[0][i]))])
         d.sort()
-        print(l)
-        print(len(d))
         l = len(d)
         if l % 2 == 1:
             slope = d[(l-1)//2]

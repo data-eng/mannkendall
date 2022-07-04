@@ -17,7 +17,8 @@ def initializer( obs ):
     retv["hi"] = None
 
     (_,l) = obs.shape
-    n = (l-2)*(l-1)/2
+    # The num of slopes is Sum l-1, l-2, ... 1 = l(l-1)/2
+    n = l*(l-1)/2
     retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
     # it is best to have odd nbins, just in case we are too successful
     # in balancing them and calculating the needs values from different bins
@@ -188,7 +189,6 @@ def rebalance( d ):
 
 def find_bins( d, low=0.05, med=0.5, high=0.95 ):
     (_,l) = d["obs"].shape
-    print((l-2)*(l-1)/2)
     n=0
     d["percentile"] = {}
     d["percentile"]["low"] = low
@@ -238,7 +238,6 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
 
 def recount_bins( d ):
     (_,l) = d["obs"].shape
-    print((l-2)*(l-1)/2)
     for i in range(len(d["bin_count"])): d["bin_count"][i]=0
     n=0
     for i in range(1,l):
