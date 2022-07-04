@@ -55,7 +55,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -71,11 +71,14 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         confidence (float, optional): the desired confidence limit, in %. Defaults to 90.
 
         method (string, opt): Method for calculating slope. One of:
-                              "siegel", "thiel": as implemented in scipy.
-                              "brute" (default): builds the n x n array of slopes and sorts it
-                              to find the median and the confidence limits.
-                              "brute-sparse": same as brute, but also computes confidence limits
-                              with an interpolation. When datapoints are few.
+                              "brute" (default): builds the n(n-1)/2 array of slopes and sorts
+                              it to find the median and the confidence limits.
+                              "brute-sparse": same as brute, but computes confidence limits
+                              with an interpolation. Use when datapoints are few.
+                              "thiel": as implemented in scipy.
+                              "bins": Estimates the slope distributions and uses this estimate
+                              to only build three small parts of the complete n(n-1)/2 array of
+                              slopes, thoses that contain the median slope and the lcl, ucl.
 
     Return:
         (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
@@ -92,6 +95,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
     if not isinstance(k_var, (int, float)):
         raise Exception('Ouch ! The variance must be of type float, not: %s' % (type(k_var)))
 
+    alpha = float(alpha_cl) / 100
 
     # NaN removal
     #obsT = obs.T
@@ -135,32 +139,19 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
         cconf = 0.0
         # Keep the default m_1, m_2 values from above
     else:
-        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * kvarroot
+        cconf = -scipy.stats.norm.ppf((1-alpha)/2) * kvarroot
         # Note: because python starts at 0 and not 1, we need an additional "-1" to
         # the following values of m_1 and m_2 to match the matlab implementation.
         m_1 = (0.5 * (l - cconf)) - 1
         m_2 = (0.5 * (l + cconf)) - 1
 
 
-    if method == "siegel":
-        # TODO: write an iterative NaN remover
-        obsT = obs.T
-        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
-        (slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='separate' )
-        #(slope,intercept) = scipy.stats.siegelslopes( good[1,:], good[0,:], method='hierarchical' )
-        lcl = 0 # how will these be computed?
-        ucl = 0 # how will these be computed?
-    elif method == "theil":
-        # TODO: write an iterative NaN remover
-        obsT = obs.T
-        good = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
+    if method == "theil":
         a = float(alpha_cl) / 100
-        (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='joint' )
-        #(slope,intercept,lcl,ucl) = scipy.stats.theilslopes( good[1,:], good[0,:], alpha=a, method='separate' )
+        (slope,intercept,lcl,ucl) = scipy.stats.theilslopes( obs[1,:], obs[0,:], alpha=alpha )
 
 
     elif method == "bins":
-        a = float(alpha_cl) / 100
         d = bins.initializer( obs, m_1, m_2 )
         (low_bin, mid_bin, high_bin) = bins.find_bins( d )
         (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
@@ -201,7 +192,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
             lcl = d[int(m_1)]
             ucl = d[int(m_2)]
 
-    return (float(slope), float(lcl), float(ucl))
+    return (slope, lcl, ucl)
 
 def s_test( obs ):
     """ Compute the S statistics (Si) for the Mann-Kendall test.

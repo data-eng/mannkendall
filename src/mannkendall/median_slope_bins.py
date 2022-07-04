@@ -10,7 +10,7 @@ def initializer( obs, lcl_idx=None, ucl_idx=None ):
     # Three arrays of up-to-this size will be needed
     # for the second pass
     retv["max_size"] = 4000000
-    retv["trace"] = True
+    retv["trace"] = False
     # The indexes of the lcl and ucl points
     # If None, lcl and ucle will not be returned.
     retv["lcl_idx"] = lcl_idx
@@ -56,6 +56,10 @@ def initializer( obs, lcl_idx=None, ucl_idx=None ):
     while idx_f < len(slope_sample):
         retv["bin_boundary"].append( slope_sample[int(idx_f)] )
         idx_f += step
+    # this can happen depending on how len(slope_sample)/retv["num_bin"]
+    # gets rounded into a float. Just drop the right-most value.
+    if len(retv["bin_boundary"]) == retv["num_bins"]:
+        retv["bin_boundary"].pop()
     assert len(retv["bin_boundary"]) == retv["num_bins"]-1
 
     retv["bin_count"] = numpy.array( [0] * retv["num_bins"] )
