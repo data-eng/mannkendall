@@ -179,20 +179,14 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
     elif method == "brute-disk":
 
-        # remove rows containing numpy.nan
-        obsT = obs.T
-        obs = ((obsT)[~np.isnan(obsT).any(axis=1)]).T
-
-        (_, obs_length) = obs.shape
-
         # store slopes in a file with prefix slopes_{uuid4}
         slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
 
         with open(slopes_file, 'w') as f:
 
             # compute the slopes
-            for i in range(0, obs_length-1):
-                for j in range(i + 1, obs_length):
+            for i in range(0, rows-1):
+                for j in range(i + 1, rows):
 
                     val = obs[1, j] - obs[1, i] / obs[0, j] - obs[0, i]
                     f.write(f'{val}\n')
@@ -206,23 +200,13 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         # remove the slopes file to clean up space
         os.remove(slopes_file)
 
-        slopes_length = int(obs_length * (obs_length - 1) / 2)
-
-        if slopes_length % 2 == 1:
-            median_pos = slopes_length // 2
+        if l % 2 == 1:
+            median_pos = l // 2
             is_even = False
         else:
-            median_pos = (slopes_length - 1) // 2
+            median_pos = (l - 1) // 2
             median_pos_2 = median_pos + 1
             is_even = True
-
-        # Apply the confidence limits
-        cconf = -scipy.stats.norm.ppf((1-alpha_cl/100)/2) * k_var**0.5
-
-        # Note: because python starts at 0 and not 1, we need an additional "-1" to the following
-        # values of m_1 and m_2 to match the matlab implementation.
-        m_1 = int((0.5 * (slopes_length - cconf)) - 1)
-        m_2 = int((0.5 * (slopes_length + cconf)) - 1)
 
         break_limit = max([median_pos, median_pos+1, m_1, m_2])
 
