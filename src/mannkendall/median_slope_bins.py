@@ -4,13 +4,17 @@ import time
 import operator
 
 
-def initializer( obs ):
+def initializer( obs, lcl_idx=None, ucl_idx=None ):
     retv = {}
     retv["obs"] = obs
     # Three arrays of up-to-this size will be needed
     # for the second pass
     retv["max_size"] = 4000000
     retv["trace"] = True
+    # The indexes of the lcl and ucl points
+    # If None, lcl and ucle will not be returned.
+    retv["lcl_idx"] = lcl_idx
+    retv["ucl_idx"] = ucl_idx
     # These are the three arrays
     retv["lo"] = None
     retv["me"] = None
@@ -187,13 +191,9 @@ def rebalance( d ):
 
 
 
-def find_bins( d, low=0.05, med=0.5, high=0.95 ):
+def find_bins( d ):
     (_,l) = d["obs"].shape
     n=0
-    d["percentile"] = {}
-    d["percentile"]["low"] = low
-    d["percentile"]["med"] = med
-    d["percentile"]["high"]= high
     
     for i in range(1,l):
         for j in range(i+1,l):
@@ -214,25 +214,22 @@ def find_bins( d, low=0.05, med=0.5, high=0.95 ):
         print("Bin counts: " + str(d["bin_count"]) )
         print("Bin boundaries: " + str(d["bin_boundary"]) )
 
-    percentile05 = low  * float(n)
-    percentile50 = med  * float(n)
-    percentile95 = high * float(n)
-
-    percentile05_bin = None
-    percentile50_bin = None
-    percentile95_bin = None
+    lcl_bin = None
+    med_bin = None
+    ucl_bin = None
+    median_idx = 0.5 * n
 
     acc = 0
     for b in range(d["num_bins"]):
         acc += d["bin_count"][b]
-        if (percentile05_bin is None) and (percentile05 < acc):
-            percentile05_bin = b
-        if (percentile50_bin is None) and (percentile50 < acc):
-            percentile50_bin = b
-        if (percentile95_bin is None) and (percentile95 < acc):
-            percentile95_bin = b
+        if (lcl_bin is None) and (d["lcl_idx"] < acc):
+            lcl_bin = b
+        if (med_bin is None) and (median_idx < acc):
+            med_bin = b
+        if (ucl_bin is None) and (d["ucl_idx"] < acc):
+            ucl_bin = b
 
-    return( percentile05_bin, percentile50_bin, percentile95_bin )
+    return( lcl_bin, med_bin, ucl_bin )
 
 
 
@@ -251,25 +248,22 @@ def recount_bins( d ):
         print("Bin counts: " + str(d["bin_count"]) )
         print("Bin boundaries: " + str(d["bin_boundary"]) )
 
-    percentile05 = d["percentile"]["low"]  * float(n)
-    percentile50 = d["percentile"]["med"]  * float(n)
-    percentile95 = d["percentile"]["high"] * float(n)
-
-    percentile05_bin = None
-    percentile50_bin = None
-    percentile95_bin = None
+    lcl_bin = None
+    med_bin = None
+    ucl_bin = None
+    median_idx = 0.5 * n
 
     acc = 0
     for b in range(d["num_bins"]):
         acc += d["bin_count"][b]
-        if (percentile05_bin is None) and (percentile05 < acc):
-            percentile05_bin = b
-        if (percentile50_bin is None) and (percentile50 < acc):
-            percentile50_bin = b
-        if (percentile95_bin is None) and (percentile95 < acc):
-            percentile95_bin = b
+        if (lcl_bin is None) and (d["lcl_idx"] < acc):
+            lcl_bin = b
+        if (med_bin is None) and (median_idx < acc):
+            med_bin = b
+        if (ucl_bin is None) and (d["ucl_idx"] < acc):
+            ucl_bin = b
 
-    return( percentile05_bin, percentile50_bin, percentile95_bin )
+    return( lcl_bin, med_bin, ucl_bin )
 
 
 
@@ -354,21 +348,17 @@ def get_percentiles( d ):
         print( 'd["bin_count"].sum(): '+str(d["bin_count"].sum()) )
         print( "n: "+str(n) )
 
-    d["low"] = 0.05
-    d["med"] = 0.5
-    d["high"] =0.95
-
-    idx_f  = d["low"] * float(n)
+    idx_f  = d["lcl_idx"]
     idx_low_1 = int(idx_f)
     if idx_f.is_integer(): idx_low_2 = idx_low_1
     else:                  idx_low_2 = idx_low_1 + 1
         
-    idx_f  = d["med"] * float(n)
+    idx_f  = 0.5 * float(n)
     idx_med_1 = int(idx_f)
     if idx_f.is_integer(): idx_med_2 = idx_med_1
     else:                  idx_med_2 = idx_med_1 + 1
 
-    idx_f  = d["high"] * float(n)
+    idx_f  = d["ucl_idx"]
     idx_high_1 = int(idx_f)
     if idx_f.is_integer(): idx_high_2 = idx_high_1
     else:                  idx_high_2 = idx_high_1 + 1

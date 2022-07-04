@@ -161,7 +161,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
 
     elif method == "bins":
         a = float(alpha_cl) / 100
-        d = bins.initializer( obs )
+        d = bins.initializer( obs, m_1, m_2 )
         (low_bin, mid_bin, high_bin) = bins.find_bins( d )
         (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         while True:
