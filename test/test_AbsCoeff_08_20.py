@@ -92,96 +92,61 @@ def test_compute_mk_stat( basename ):
             print(good_results)
     except:
         good_results = None
-    
-    if redo_prewhite:
-        w = my_whites["pw"]
-    else:
-        w = numpy.loadtxt( basename + ".pw.csv" )
-    dd = numpy.stack( (ts,w), axis=0 )
-    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-    if report:
-        print((result, s, vari, z))
-    else:
-        assert result["p"]    - good_results[0][0] < 1E-8
-        assert result["ss"]   - good_results[0][1] == 0
-        assert result["slope"]- good_results[0][2] < 1E-8
-        assert result["ucl"]  - good_results[0][3] < 1E-8
-        assert result["lcl"]  - good_results[0][4] < 1E-8
-        assert s    - good_results[0][5] < 1E-2
-        assert vari - good_results[0][6] < 1E-8
-        assert z    - good_results[0][7] < 1E-8
 
-    if redo_prewhite:
-        w = my_whites["pw_cor"]
-    else:
-        w = numpy.loadtxt( basename + ".pw_cor.csv" )
-    dd = numpy.stack( (ts,w), axis=0 )
-    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-    if report:
-        print((result, s, vari, z))
-    else:
-        assert result["p"]    - good_results[1][0] < 1E-8
-        assert result["ss"]   - good_results[1][1] == 0
-        assert result["slope"]- good_results[1][2] < 1E-8
-        assert result["ucl"]  - good_results[1][3] < 1E-8
-        assert result["lcl"]  - good_results[1][4] < 1E-8
-        assert s    - good_results[1][5] < 1E-2
-        assert vari - good_results[1][6] < 1E-8
-        assert z    - good_results[1][7] < 1E-8
 
-    if redo_prewhite:
-        w = my_whites["tfpw_y"]
-    else:
-        w = numpy.loadtxt( basename + ".tfpw_y.csv" )
-    dd = numpy.stack( (ts,w), axis=0 )
-    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-    if report:
-        print((result, s, vari, z))
-    else:
-        assert result["p"]    - good_results[2][0] < 1E-8
-        assert result["ss"]   - good_results[2][1] == 0
-        assert result["slope"]- good_results[2][2] < 1E-8
-        assert result["ucl"]  - good_results[2][3] < 1E-8
-        assert result["lcl"]  - good_results[2][4] < 1E-8
-        assert s    - good_results[2][5] < 1E-2
-        assert vari - good_results[2][6] < 1E-8
-        assert z    - good_results[2][7] < 1E-8
+    count = 0
+    for white_name in ["pw","pw_cor","tfpw_y","tfpw_ws","vctfpw"]:
+        print("Checking MK over "+white_name)
+        filename = basename + "." + white_name + ".csv"
+        if redo_prewhite:
+            w = my_whites[white_name]
+        else:
+            w = numpy.loadtxt( filename )
+        dd = numpy.stack( (ts,w), axis=0 )
+        (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
+        dp  = result["p"]    - good_results[count][0]
+        dss = result["ss"]   - good_results[count][1]
+        dsl = result["slope"]- good_results[count][2]
+        ducl= result["ucl"]  - good_results[count][3]
+        dlcl= result["lcl"]  - good_results[count][4]
+        ds  = s    - good_results[count][5]
+        dvar= vari - good_results[count][6]
+        dz  = z    - good_results[count][7]
 
-    if redo_prewhite:
-        w = my_whites["tfpw_ws"]
-    else:
-        w = numpy.loadtxt( basename + ".tfpw_ws.csv" )
-    dd = numpy.stack( (ts,w), axis=0 )
-    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-    if report:
-        print((result, s, vari, z))
-    else:
-        assert result["p"]    - good_results[3][0] < 1E-8
-        assert result["ss"]   - good_results[3][1] == 0
-        assert result["slope"]- good_results[3][2] < 1E-8
-        assert result["ucl"]  - good_results[3][3] < 1E-8
-        assert result["lcl"]  - good_results[3][4] < 1E-8
-        assert s    - good_results[3][5] < 1E-2
-        assert vari - good_results[3][6] < 1E-8
-        assert z    - good_results[3][7] < 1E-8
+        if report and (dp >= 1E-8):
+            print("p error is "+str(dp)+", rel err: "+str(dp/good_results[count][0]))
+        else:
+            assert dp   < 1E-8
+        if report and (dss > 0):
+            print("ss error is "+str(dss)+", rel err: "+str(dss/good_results[count][1]))
+        else:
+            assert dss == 0
+        if report and (dsl > 1E-8):
+            print("slope error is "+str(dsl)+", rel err: "+str(dsl/good_results[count][2]))
+        else:
+            assert dsl  < 1E-8
+        if report and (ducl > 1E-8):
+            print("ucl error is "+str(ducl)+", rel err: "+str(ducl/good_results[count][3]))
+        else:
+            assert ducl < 1E-8
+        if report and (dlcl > 1E-8):
+            print("lcl error is "+str(dlcl)+", rel err: "+str(dlcl/good_results[count][4]))
+        else:
+            assert dlcl < 1E-8
+        if report and (ds > 1E-2):
+            print("s error is "+str(ds)+", rel err: "+str(ds/good_results[count][5]))
+        else:
+            assert ds   < 1E-2
+        if report and (dvar > 1E-8):
+            print("vari error is "+str(dvar)+", rel err: "+str(dvar/good_results[count][6]))
+        else:
+            assert dvar < 1E-8
+        if report and (dz > 1E-8):
+            print("z error is "+str(dz)+", rel err: "+str(dz/good_results[count][7]))
+        else:
+            assert dz   < 1E-8
 
-    if redo_prewhite:
-        w = my_whites["vctfpw"]
-    else:
-        w = numpy.loadtxt( basename + ".vctfpw.csv" )
-    dd = numpy.stack( (ts,w), axis=0 )
-    (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-    if report:
-        print((result, s, vari, z))
-    else:
-        assert result["p"]    - good_results[4][0] < 1E-8
-        assert result["ss"]   - good_results[4][1] == 0
-        assert result["slope"]- good_results[4][2] < 1E-8
-        assert result["ucl"]  - good_results[4][3] < 1E-8
-        assert result["lcl"]  - good_results[4][4] < 1E-8
-        assert s    - good_results[4][5] < 1E-2
-        assert vari - good_results[4][6] < 1E-8
-        assert z    - good_results[4][7] < 1E-8
+        count += 1
 
 
 report = True
