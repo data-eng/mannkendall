@@ -46,12 +46,12 @@ def initializer( obs ):
                 slope_sample.append( slope )
 
     slope_sample.sort()
-    step = 1 + (len(slope_sample) // retv["num_bins"])
-    for i in range( step, len(slope_sample), step ):
-        retv["bin_boundary"].append( slope_sample[i] )
-    if not ( len(retv["bin_boundary"]) == retv["num_bins"]-1 ):
-        print("This should never happen: poping last boundary")
-        retv["bin_boundary"].pop()
+    step = len(slope_sample) / retv["num_bins"]
+    idx_f = step
+    while idx_f < len(slope_sample):
+        retv["bin_boundary"].append( slope_sample[int(idx_f)] )
+        idx_f += step
+    assert len(retv["bin_boundary"]) == retv["num_bins"]-1
 
     retv["bin_count"] = numpy.array( [0] * retv["num_bins"] )
     if retv["trace"]:
