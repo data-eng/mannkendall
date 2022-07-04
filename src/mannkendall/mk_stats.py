@@ -188,7 +188,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             for i in range(0, rows-1):
                 for j in range(i + 1, rows):
 
-                    val = obs[1, j] - obs[1, i] / obs[0, j] - obs[0, i]
+                    val = (obs[1, j] - obs[1, i]) / (obs[0, j] - obs[0, i])
                     f.write(f'{val}\n')
 
         # file to store the sorted values
