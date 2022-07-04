@@ -220,13 +220,13 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                 if line_num > break_limit:
                     break
                 if line_num == m_1_pos:
-                    lcl = line
+                    lcl = float(line)
                 if line_num == median_pos:
-                    slope = line
+                    slope = float(line)
                 elif is_even and line_num == median_pos_2:
                     slope = (float(slope) + float(line)) / 2
                 if line_num == m_2_pos:
-                    ucl = line
+                    ucl = float(line)
                 line_num += 1
 
         # remove the sorted file
