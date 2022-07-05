@@ -113,6 +113,9 @@ def test_compute_mk_stat( basename ):
         dvar= vari - good_results[count][6]
         dz  = z    - good_results[count][7]
 
+        if report:
+            print((result, s, vari, z))
+
         if report and (dp >= 1E-8):
             print("p error is "+str(dp)+", rel err: "+str(dp/good_results[count][0]))
         else:
