@@ -11,6 +11,7 @@ This file contains test functions
 
 import sys
 import numpy
+import json
 
 import mannkendall as mk
 from mannkendall import mk_stats as mks
@@ -86,15 +87,15 @@ def test_compute_mk_stat( basename ):
     ts = d[0,:]
 
     try:
-        good_results = numpy.loadtxt( basename + ".results.csv" )
+        with open( basename + ".results.json", "r" ) as fp:
+            good_results = json.load( fp )
         if report:
-            print("good_results")
+            print("Saved results are:")
             print(good_results)
     except:
         good_results = None
 
 
-    count = 0
     for white_name in ["pw","pw_cor","tfpw_y","tfpw_ws","vctfpw"]:
         print("Checking MK over "+white_name)
         filename = basename + "." + white_name + ".csv"
@@ -104,52 +105,51 @@ def test_compute_mk_stat( basename ):
             w = numpy.loadtxt( filename )
         dd = numpy.stack( (ts,w), axis=0 )
         (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-        dp  = result["p"]    - good_results[count][0]
-        dss = result["ss"]   - good_results[count][1]
-        dsl = result["slope"]- good_results[count][2]
-        ducl= result["ucl"]  - good_results[count][3]
-        dlcl= result["lcl"]  - good_results[count][4]
-        ds  = s    - good_results[count][5]
-        dvar= vari - good_results[count][6]
-        dz  = z    - good_results[count][7]
+        
+        dp  = result["p"]    - good_results[white_name]["p"]
+        dss = result["ss"]   - good_results[white_name]["ss"]
+        dsl = result["slope"]- good_results[white_name]["slope"]
+        ducl= result["ucl"]  - good_results[white_name]["ucl"]
+        dlcl= result["lcl"]  - good_results[white_name]["lcl"]
+        ds  = s    - good_results[white_name]["s"]
+        dvar= vari - good_results[white_name]["vari"]
+        dz  = z    - good_results[white_name]["z"]
 
         if report:
             print((result, s, vari, z))
 
         if report and (dp >= 1E-8):
-            print("p error is "+str(dp)+", rel err: "+str(dp/good_results[count][0]))
+            print("p error is "+str(dp)+", rel err: "+str(dp/good_results[white_name]["p"]))
         else:
             assert dp   < 1E-8
         if report and (dss > 0):
-            print("ss error is "+str(dss)+", rel err: "+str(dss/good_results[count][1]))
+            print("ss error is "+str(dss)+", rel err: "+str(dss/good_results[white_name]["ss"]))
         else:
             assert dss == 0
         if report and (dsl > 1E-8):
-            print("slope error is "+str(dsl)+", rel err: "+str(dsl/good_results[count][2]))
+            print("slope error is "+str(dsl)+", rel err: "+str(dsl/good_results[white_name]["slope"]))
         else:
             assert dsl  < 1E-8
         if report and (ducl > 1E-8):
-            print("ucl error is "+str(ducl)+", rel err: "+str(ducl/good_results[count][3]))
+            print("ucl error is "+str(ducl)+", rel err: "+str(ducl/good_results[white_name]["ucl"]))
         else:
             assert ducl < 1E-8
         if report and (dlcl > 1E-8):
-            print("lcl error is "+str(dlcl)+", rel err: "+str(dlcl/good_results[count][4]))
+            print("lcl error is "+str(dlcl)+", rel err: "+str(dlcl/good_results[white_name]["lcl"]))
         else:
             assert dlcl < 1E-8
         if report and (ds > 1E-2):
-            print("s error is "+str(ds)+", rel err: "+str(ds/good_results[count][5]))
+            print("s error is "+str(ds)+", rel err: "+str(ds/good_results[white_name]["s"]))
         else:
             assert ds   < 1E-2
         if report and (dvar > 1E-8):
-            print("vari error is "+str(dvar)+", rel err: "+str(dvar/good_results[count][6]))
+            print("vari error is "+str(dvar)+", rel err: "+str(dvar/good_results[white_name]["vari"]))
         else:
             assert dvar < 1E-8
         if report and (dz > 1E-8):
-            print("z error is "+str(dz)+", rel err: "+str(dz/good_results[count][7]))
+            print("z error is "+str(dz)+", rel err: "+str(dz/good_results[white_name]["z"]))
         else:
             assert dz   < 1E-8
-
-        count += 1
 
 
 report = True

@@ -5,6 +5,8 @@ import numpy
 import mannkendall.mk_white as mkw
 import mannkendall as mk
 import datetime
+import json
+
 
 def mat2datetime(datenum):
     # Matlab time is days since 1/1/0000.
@@ -30,13 +32,19 @@ w = mkw.prewhite( d[1], dts, 0.02, alpha_ak=95)
 # w["tfpw_ws"] is Wang & Swail, 2001
 # w["vctfpw"] is Wang et al., 2015
 
-numpy.savetxt( "pw", w["pw"] )
-numpy.savetxt( "pw_cor", w["pw_cor"] )
-numpy.savetxt( "tfpw_y", w["tfpw_y"] )
-numpy.savetxt( "tfpw_ws", w["tfpw_ws"] )
-numpy.savetxt( "vctfpw", w["vctfpw"] )
+numpy.savetxt( sys.argv[1] + ".pw", w["pw"] )
+numpy.savetxt( sys.argv[1] + ".pw_cor", w["pw_cor"] )
+numpy.savetxt( sys.argv[1] + ".tfpw_y", w["tfpw_y"] )
+numpy.savetxt( sys.argv[1] + ".tfpw_ws", w["tfpw_ws"] )
+numpy.savetxt( sys.argv[1] + ".vctfpw", w["vctfpw"] )
+
+results = {}
 
 for white_name in ["pw","pw_cor","tfpw_y","tfpw_ws","vctfpw"]:
     (result, s, vari, z) = mk.compute_mk_stat( dts, w[white_name], 0.2 )
-    print(white_name)
-    print((result, s, vari, z))
+    results[white_name] = dict(result)
+    results[white_name]["s"]=s
+    results[white_name]["vari"]=vari
+    results[white_name]["z"]=z
+with open( sys.argv[1] + ".results.json", "w" ) as fp:
+    json.dump( results, fp, indent=2 )
