@@ -55,7 +55,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -153,18 +153,13 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
 
     elif method == "bins":
         d = bins.initializer( obs, m_1, m_2 )
-        (low_bin, mid_bin, high_bin) = bins.find_bins( d )
-        (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
-        while True:
+        (rebalaned, low_bin, mid_bin, high_bin) = bins.find_bins( d )
+        if rebalaned:
+            (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
+        while rebalaned:
             r = bins.rebalance( d )
-            if (r is None):
-                print("Rebalanced: None")
-                break
-            else:
-                print("Rebalanced: "+str(r))
-                print( d["bin_count"] )
-                print( d["bin_boundary"] )
-            print("Recounting")
+            if (r is None): rebalaned = False
+            else: rebalaned = True
             (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         bins.populate_bins( d, low_bin, mid_bin, high_bin )
         (lcl,slope,ucl) = bins.get_percentiles( d )

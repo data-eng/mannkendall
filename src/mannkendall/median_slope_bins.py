@@ -9,8 +9,8 @@ def initializer( obs, lcl_idx=None, ucl_idx=None ):
     retv["obs"] = obs
     # Three arrays of up-to-this size will be needed
     # for the second pass
-    retv["max_size"] = 4000000
-    retv["trace"] = False
+    retv["max_size"] = 8000000
+    retv["trace"] = True
     # The indexes of the lcl and ucl points
     # If None, lcl and ucle will not be returned.
     retv["lcl_idx"] = lcl_idx
@@ -198,20 +198,23 @@ def rebalance( d ):
 def find_bins( d ):
     (_,l) = d["obs"].shape
     n=0
+    rebalanced = False
     
     for i in range(1,l):
         for j in range(i+1,l):
             n += 1
             slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             record_value( d, slope, 1 )
-            if n%10 == 0:
-                if d["trace"] and False:
+            if n%1000000 == 0:
+                if d["trace"]:
                     print( str(n)+": "+str(d["bin_count"]) )
                 r = rebalance( d )
-                if d["trace"] and (r is not None) and False:
-                    print("Rebalanced at "+str(n)+": "+str(r))
-                    print( d["bin_count"] )
-                    print( d["bin_boundary"] )
+                if r is not None:
+                    rebalanced = True
+                    if d["trace"]:
+                        print("Rebalanced at "+str(n)+": "+str(r))
+                        print( d["bin_count"] )
+                        print( d["bin_boundary"] )
     d["n"] = n
     if d["trace"]:
         print("First pass:")
@@ -233,7 +236,7 @@ def find_bins( d ):
         if (ucl_bin is None) and (d["ucl_idx"] < acc):
             ucl_bin = b
 
-    return( lcl_bin, med_bin, ucl_bin )
+    return( rebalanced, lcl_bin, med_bin, ucl_bin )
 
 
 
@@ -393,44 +396,3 @@ def get_percentiles( d ):
         
     return (value_low,value_med,value_high)
 
-
-def run_me():
-    test = "sort"
-
-    if test == "sort":
-        aa
-    elif test == "test1":
-        data = [ [0,10,20,30,40,50,60,70,80,90,100,110,120], [5,1,5,6,5,2,4,8,2,3,1,2,4] ]
-        obs = numpy.array(data)
-        #a=datastack[:,datastack[1,:].argsort()]
-        #print(datastack)
-    else:
-        obs1 = numpy.loadtxt( sys.argv[1] ).T
-        print( "loaded " + str(obs1.shape) )
-        obsT = obs1.T
-        obs = ((obsT)[~numpy.isnan(obsT).any(axis=1)]).T
-        print( "after nan rm " + str(obs.shape) )
-
-    d = initializer( obs )
-
-    (low_bin, mid_bin, high_bin) = find_bins( d )
-    print("Recounting")
-    (low_bin, mid_bin, high_bin) = recount_bins( d )
-
-    while True:
-        r = rebalance( d )
-        if (r is None):
-            print("Rebalanced: None")
-            break
-        else:
-            print("Rebalanced: "+str(r))
-            print( d["bin_count"] )
-            print( d["bin_boundary"] )
-        print("Recounting")
-        (low_bin, mid_bin, high_bin) = recount_bins( d )
-
-    populate_bins( d, low_bin, mid_bin, high_bin )
-
-    (value_low,value_med,value_high) = get_percentiles( d )
-
-    print( (value_low,value_med,value_high) )
