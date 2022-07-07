@@ -162,7 +162,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
                     rebalanced = False
                 else:
                     (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
-        bins.populate_bins( d, low_bin, mid_bin, high_bin )
+        bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
         
 
