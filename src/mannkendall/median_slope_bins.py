@@ -281,8 +281,8 @@ def populate_bins( d ):
          d["hi"] = numpy.full( d["bin_count"][high],numpy.inf )
     else:
          d["lo"] = numpy.full( d["max_size"], numpy.inf )
-         d["me"] = numpy.full( d["max_size"][med], numpy.inf )
-         d["hi"] = numpy.full( d["max_size"][high],numpy.inf )
+         d["me"] = numpy.full( d["max_size"], numpy.inf )
+         d["hi"] = numpy.full( d["max_size"],numpy.inf )
 
     lo_ptr = 0
     me_ptr = 0
@@ -372,6 +372,7 @@ def populate_bins( d ):
                    " med ("+str(med)+"): "+str(me_ptr)+\
                    " high ("+str(high)+")"+str(hi_ptr) )
 
+    return still_good
 
 
 

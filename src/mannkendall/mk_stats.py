@@ -153,14 +153,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
 
     elif method == "bins":
         d = bins.initializer( obs, slope_idx_1, slope_idx_2, m_1, m_2 )
-        (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
-        rebalanced = True
-        while rebalanced:
-            r = bins.rebalance( d )
-            if (r is None):
-                rebalanced = False
-            else:
-                (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
+        is_good = bins.populate_bins( d )
+        if not is_good:
+            rebalanced = True
+            while rebalanced:
+                r = bins.rebalance( d )
+                if (r is None):
+                    rebalanced = False
+                else:
+                    (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         bins.populate_bins( d, low_bin, mid_bin, high_bin )
         (lcl,slope,ucl) = bins.get_percentiles( d )
         
