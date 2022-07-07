@@ -25,6 +25,7 @@ def initializer( obs, med_idx_1, med_idx_2, lcl_idx=None, ucl_idx=None ):
     (_,l) = obs.shape
     # The num of slopes is Sum l-1, l-2, ... 1 = l(l-1)/2
     n = l*(l-1)/2
+    retv["n"] = n
 
     retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
     # it is best to have odd nbins, just in case we are too successful
@@ -402,24 +403,24 @@ def get_percentiles( d ):
         assert False
 
     for b in range(0,d["low_bin"]):
-        idx_low_1  -= d["bin_count"][b]
-        idx_low_2  -= d["bin_count"][b]
-        idx_med_1  -= d["bin_count"][b]
-        idx_med_2  -= d["bin_count"][b]
-        idx_high_1 -= d["bin_count"][b]
-        idx_high_2 -= d["bin_count"][b]
+        idx_low_1  -= int( d["bin_count"][b] )
+        idx_low_2  -= int( d["bin_count"][b] )
+        idx_med_1  -= int( d["bin_count"][b] )
+        idx_med_2  -= int( d["bin_count"][b] )
+        idx_high_1 -= int( d["bin_count"][b] )
+        idx_high_2 -= int( d["bin_count"][b] )
     value_low = (d["lo"][idx_low_1]+d["lo"][idx_low_2]) / 2
 
     for b in range(d["low_bin"],d["med_bin"]):
-        idx_med_1  -= d["bin_count"][b]
-        idx_med_2  -= d["bin_count"][b]
-        idx_high_1 -= d["bin_count"][b]
-        idx_high_2 -= d["bin_count"][b]
+        idx_med_1  -= int( d["bin_count"][b] )
+        idx_med_2  -= int( d["bin_count"][b] )
+        idx_high_1 -= int( d["bin_count"][b] )
+        idx_high_2 -= int( d["bin_count"][b] )
     value_med = (d["me"][idx_med_1]+d["me"][idx_med_2]) / 2
     
     for b in range(d["med_bin"],d["high_bin"]):
-        idx_high_1 -= d["bin_count"][b]
-        idx_high_2 -= d["bin_count"][b]
+        idx_high_1 -= int( d["bin_count"][b] )
+        idx_high_2 -= int( d["bin_count"][b] )
     value_high = (d["hi"][idx_high_1]+d["hi"][idx_high_2]) / 2
         
     return (value_low,value_med,value_high)

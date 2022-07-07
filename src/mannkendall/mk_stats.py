@@ -115,15 +115,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='bins' ):
     # The num of slopes is Sum rows-1, rows-2, ... 1 = rows*(rows-1)/2
     l = rows*(rows-1)/2
     if l % 2 == 1:
-        slope_idx_1 = (l-1)//2
-        slope_idx_2 = (l-1)//2
+        slope_idx_1 = int( (l-1)//2 )
+        slope_idx_2 = int( (l-1)//2 )
         # these m_1, m_2 defaults will be overriden below,
         # unless k_var is very low
         m_1 = (l-1)//2 - 1
         m_2 = (l-1)//2 + 1
     else:
-        slope_idx_1 = l//2-1
-        slope_idx_2 = l//2
+        slope_idx_1 = int( l//2-1 )
+        slope_idx_2 = int( l//2 )
         # these m_1, m_2 defaults will be overriden below,
         # unless k_var is very low
         m_1 = l//2 - 2
