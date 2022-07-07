@@ -4,17 +4,19 @@ import time
 import operator
 
 
-def initializer( obs, lcl_idx=None, ucl_idx=None ):
+def initializer( obs, med_idx_1, med_idx_2, lcl_idx=None, ucl_idx=None ):
     retv = {}
     retv["obs"] = obs
     # Three arrays of up-to-this size will be needed
     # for the second pass
-    retv["max_size"] = 8000000
+    retv["max_size"] = 32000000
     retv["trace"] = True
     # The indexes of the lcl and ucl points
     # If None, lcl and ucle will not be returned.
     retv["lcl_idx"] = lcl_idx
     retv["ucl_idx"] = ucl_idx
+    retv["med_idx_1"] = med_idx_1
+    retv["med_idx_2"] = med_idx_2
     # These are the three arrays
     retv["lo"] = None
     retv["me"] = None
@@ -23,6 +25,7 @@ def initializer( obs, lcl_idx=None, ucl_idx=None ):
     (_,l) = obs.shape
     # The num of slopes is Sum l-1, l-2, ... 1 = l(l-1)/2
     n = l*(l-1)/2
+
     retv["num_bins"] = 2 * int(1 + n // retv["max_size"])
     # it is best to have odd nbins, just in case we are too successful
     # in balancing them and calculating the needs values from different bins
@@ -67,7 +70,28 @@ def initializer( obs, lcl_idx=None, ucl_idx=None ):
         print("Init:")
         print("Bin counts: " + str(retv["bin_count"]) )
         print("Bin boundaries: " + str(retv["bin_boundary"]) )
-    
+
+    # Based on this estimated distribution, also estimate which bins
+    # will contain median, lcl, ucl. This allows us to provisionally
+    # populate them during the first count, so that we might get our
+    # result with only one count.
+
+    # We partitioned into bins that have `step` items each, so we
+    # expect the actual bins to have `step` * `sampler` items each.
+    expected_bin_size = step * sampler
+
+    if lcl_idx is None: retv["lcl_bin"] = None
+    else: retv["lcl_bin"] = int(lcl_idx // expected_bin_size)
+
+    if ucl_idx is None: retv["ucl_bin"] = None
+    else: retv["ucl_bin"] = int(ucl_idx // expected_bin_size)
+
+    assert (med_idx_1 // expected_bin_size) == (med_idx_2 // expected_bin_size)
+    retv["med_bin"] = int(med_idx_1 // expected_bin_size)
+
+    if retv["trace"]:
+        print("Estimated that median (idx: "+str(med_idx_1)+","+str(med_idx_1)+") will be in " + str(retv["med_bin"]) + ", lcl (idx: "+str(lcl_idx)+") in " + str(retv["lcl_bin"]) + ", ucl (idx: "+str(ucl_idx)+") in " + str(retv["ucl_bin"]))
+
     return retv
 
 
@@ -76,12 +100,14 @@ def record_value( d, v, f ):
     # f is 1 or 0.
     # Use 1 to increment the bin count.
     # Use 0 to only find the righ bin
+    # if pop is True, the med,lcl,ucl bins are also populated
     bin=0
     while( (bin < d["num_bins"]-1) and (v > d["bin_boundary"][bin]) ):
         bin += 1
     if d["trace"] and False:
         print( "Placed " + str(v) + " in bin " + str(bin) )
     d["bin_count"][bin] += f
+        
     return bin
 
 
@@ -196,47 +222,22 @@ def rebalance( d ):
 
 
 def find_bins( d ):
-    (_,l) = d["obs"].shape
-    n=0
-    rebalanced = False
-    
-    for i in range(1,l):
-        for j in range(i+1,l):
-            n += 1
-            slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
-            record_value( d, slope, 1 )
-            if n%1000000 == 0:
-                if d["trace"]:
-                    print( str(n)+": "+str(d["bin_count"]) )
-                r = rebalance( d )
-                if r is not None:
-                    rebalanced = True
-                    if d["trace"]:
-                        print("Rebalanced at "+str(n)+": "+str(r))
-                        print( d["bin_count"] )
-                        print( d["bin_boundary"] )
-    d["n"] = n
-    if d["trace"]:
-        print("First pass:")
-        print("Bin counts: " + str(d["bin_count"]) )
-        print("Bin boundaries: " + str(d["bin_boundary"]) )
-
-    lcl_bin = None
-    med_bin = None
-    ucl_bin = None
-    median_idx = 0.5 * n
+    d["lcl_bin"] = None
+    d["med_bin"] = None
+    d["ucl_bin"] = None
 
     acc = 0
     for b in range(d["num_bins"]):
         acc += d["bin_count"][b]
-        if (lcl_bin is None) and (d["lcl_idx"] < acc):
-            lcl_bin = b
-        if (med_bin is None) and (median_idx < acc):
-            med_bin = b
-        if (ucl_bin is None) and (d["ucl_idx"] < acc):
-            ucl_bin = b
+        if (d["lcl_bin"] is None) and (d["lcl_idx"] < acc):
+            d["lcl_bin"] = b
+        if (d["med_bin"] is None) and (d["med_idx_1"] < acc):
+            assert d["med_idx_2"] < acc
+            d["med_bin"] = b
+        if (d["ucl_bin"] is None) and (d["ucl_idx"] < acc):
+            d["ucl_bin"] = b
 
-    return( rebalanced, lcl_bin, med_bin, ucl_bin )
+    return (d["lcl_bin"], d["med_bin"], d["ucl_bin"])
 
 
 
@@ -249,28 +250,19 @@ def recount_bins( d ):
             n += 1
             slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             record_value( d, slope, 1 )
+            if d["trace"] and (n%10000000) == 0:
+                print( "recount_bins: done "+str(n//1000000)+" m")
+
     d["n"] = n
+    (lcl_bin, med_bin, ucl_bin) = find_bins( d )
+
     if d["trace"]:
         print("Second pass:")
         print("Bin counts: " + str(d["bin_count"]) )
         print("Bin boundaries: " + str(d["bin_boundary"]) )
+        print("Median (idx: "+str(d["med_idx_1"])+","+str(d["med_idx_1"])+") is in " + str(d["med_bin"]) + ", lcl (idx: "+str(d["lcl_idx"])+") in " + str(d["lcl_bin"]) + ", ucl (idx: "+str(d["ucl_idx"])+") in " + str(d["ucl_bin"]))
 
-    lcl_bin = None
-    med_bin = None
-    ucl_bin = None
-    median_idx = 0.5 * n
-
-    acc = 0
-    for b in range(d["num_bins"]):
-        acc += d["bin_count"][b]
-        if (lcl_bin is None) and (d["lcl_idx"] < acc):
-            lcl_bin = b
-        if (med_bin is None) and (median_idx < acc):
-            med_bin = b
-        if (ucl_bin is None) and (d["ucl_idx"] < acc):
-            ucl_bin = b
-
-    return( lcl_bin, med_bin, ucl_bin )
+    return (lcl_bin, med_bin, ucl_bin)
 
 
 
@@ -282,6 +274,7 @@ def populate_bins( d, low, med, high ):
     lo_ptr = 0
     me_ptr = 0
     hi_ptr = 0
+
     for i in range(1,l):
         for j in range(i+1,l):
             slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
