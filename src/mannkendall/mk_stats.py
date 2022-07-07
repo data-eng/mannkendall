@@ -188,7 +188,6 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         tmp_array_last_index = tmp_array_l - 1
 
         tmp_array = np.empty(tmp_array_l)
-        tmp_array[:] = np.NaN
 
         tmp_files = []
 
@@ -207,14 +206,12 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                     out_file = slopes_dir + os.sep + str(uuid.uuid4())
                     np.savetxt(out_file, tmp_array)
                     tmp_files.append(out_file)
-                    tmp_array = np.empty(tmp_array_l)
-                    tmp_array[:] = np.NaN
                     tmp_array_c = 0
                 else:
                     tmp_array_c += 1
 
         if tmp_array_c != 0:  # write remaining values
-            tmp_array = tmp_array[~np.isnan(tmp_array)]
+            tmp_array = tmp_array[:tmp_array_c]
             tmp_array.sort()
             out_file = slopes_dir + os.sep + str(uuid.uuid4())
             np.savetxt(out_file, tmp_array)
