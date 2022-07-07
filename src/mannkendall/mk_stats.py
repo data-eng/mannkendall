@@ -227,7 +227,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             for line in heapq.merge(*files, key=float):
                 f_out.write(line)
 
-        # TODO: remove the tmp files
+        for f in tmp_files:
+            os.remove(f)
 
         if l % 2 == 1:
             median_pos = l // 2
