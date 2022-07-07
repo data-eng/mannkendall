@@ -14,6 +14,7 @@ This file contains the core statistical routines for the package.
 # Import the required packages
 import heapq
 from datetime import datetime
+from contextlib import ExitStack
 import copy
 import os
 import subprocess
@@ -219,8 +220,11 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
         sorted_slopes_file = os.path.join(slopes_dir, 'sorted')
 
-        with open(sorted_slopes_file, 'w') as f_out:
-            for line in heapq.merge(*[open(os.path.join(slopes_dir, f), 'r') for f in tmp_files], key=float):
+        with ExitStack() as stack, open(sorted_slopes_file, 'w') as f_out:
+
+            files = [stack.enter_context(open(fname, 'r')) for fname in tmp_files]
+
+            for line in heapq.merge(*files, key=float):
                 f_out.write(line)
 
         # TODO: remove the tmp files
