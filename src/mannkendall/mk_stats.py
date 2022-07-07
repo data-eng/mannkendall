@@ -115,15 +115,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
     # The num of slopes is Sum rows-1, rows-2, ... 1 = rows*(rows-1)/2
     l = rows*(rows-1)/2
     if l % 2 == 1:
-        slope_idx_1 = (l-1)//2
-        slope_idx_2 = (l-1)//2
+        slope_idx_1 = int( (l-1)//2 )
+        slope_idx_2 = int( (l-1)//2 )
         # these m_1, m_2 defaults will be overriden below,
         # unless k_var is very low
         m_1 = (l-1)//2 - 1
         m_2 = (l-1)//2 + 1
     else:
-        slope_idx_1 = l//2-1
-        slope_idx_2 = l//2
+        slope_idx_1 = int( l//2-1 )
+        slope_idx_2 = int( l//2 )
         # these m_1, m_2 defaults will be overriden below,
         # unless k_var is very low
         m_1 = l//2 - 2
@@ -152,21 +152,17 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute' ):
 
 
     elif method == "bins":
-        d = bins.initializer( obs, m_1, m_2 )
-        (low_bin, mid_bin, high_bin) = bins.find_bins( d )
-        (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
-        while True:
-            r = bins.rebalance( d )
-            if (r is None):
-                print("Rebalanced: None")
-                break
-            else:
-                print("Rebalanced: "+str(r))
-                print( d["bin_count"] )
-                print( d["bin_boundary"] )
-            print("Recounting")
-            (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
-        bins.populate_bins( d, low_bin, mid_bin, high_bin )
+        d = bins.initializer( obs, slope_idx_1, slope_idx_2, m_1, m_2 )
+        is_good = bins.populate_bins( d )
+        if not is_good:
+            rebalanced = True
+            while rebalanced:
+                r = bins.rebalance( d )
+                if (r is None):
+                    rebalanced = False
+                else:
+                    (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
+        bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
         
 

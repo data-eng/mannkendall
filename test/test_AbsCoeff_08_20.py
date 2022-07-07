@@ -117,37 +117,37 @@ def test_compute_mk_stat( basename ):
 
         if report:
             print((result, s, vari, z))
-
-        if report and (dp >= 1E-8):
-            print("p error is "+str(dp)+", rel err: "+str(dp/good_results[white_name]["p"]))
+        if report:
+            print("p error: "+str(dp)+", rel err: "+str(dp/good_results[white_name]["p"]))
         else:
             assert dp   < 1E-8
-        if report and (dss > 0):
-            print("ss error is "+str(dss)+", rel err: "+str(dss/good_results[white_name]["ss"]))
+        if report:
+            # Nor rel error, as this is often zero
+            print("ss error: "+str(dss))
         else:
             assert dss == 0
-        if report and (dsl > 1E-8):
-            print("slope error is "+str(dsl)+", rel err: "+str(dsl/good_results[white_name]["slope"]))
+        if report:
+            print("slope error: "+str(dsl)+", rel err: "+str(dsl/good_results[white_name]["slope"]))
         else:
             assert dsl  < 1E-8
-        if report and (ducl > 1E-8):
-            print("ucl error is "+str(ducl)+", rel err: "+str(ducl/good_results[white_name]["ucl"]))
+        if report:
+            print("ucl error: "+str(ducl)+", rel err: "+str(ducl/good_results[white_name]["ucl"]))
         else:
             assert ducl < 1E-8
-        if report and (dlcl > 1E-8):
-            print("lcl error is "+str(dlcl)+", rel err: "+str(dlcl/good_results[white_name]["lcl"]))
+        if report:
+            print("lcl error: "+str(dlcl)+", rel err: "+str(dlcl/good_results[white_name]["lcl"]))
         else:
             assert dlcl < 1E-8
-        if report and (ds > 1E-2):
-            print("s error is "+str(ds)+", rel err: "+str(ds/good_results[white_name]["s"]))
+        if report:
+            print("s error: "+str(ds)+", rel err: "+str(ds/good_results[white_name]["s"]))
         else:
             assert ds   < 1E-2
-        if report and (dvar > 1E-8):
-            print("vari error is "+str(dvar)+", rel err: "+str(dvar/good_results[white_name]["vari"]))
+        if report:
+            print("vari error: "+str(dvar)+", rel err: "+str(dvar/good_results[white_name]["vari"]))
         else:
             assert dvar < 1E-8
-        if report and (dz > 1E-8):
-            print("z error is "+str(dz)+", rel err: "+str(dz/good_results[white_name]["z"]))
+        if report:
+            print("z error: "+str(dz)+", rel err: "+str(dz/good_results[white_name]["z"]))
         else:
             assert dz   < 1E-8
 
