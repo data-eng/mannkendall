@@ -65,7 +65,14 @@ def initializer( obs, med_idx_1, med_idx_2, lcl_idx=None, ucl_idx=None ):
         retv["bin_boundary"].pop()
     assert len(retv["bin_boundary"]) == retv["num_bins"]-1
 
-    retv["bin_count"] = numpy.array( [0] * retv["num_bins"] )
+    # We partitioned into bins that have `step` items each, so we
+    # expect the actual bins to have `step` * `sampler` items each.
+    expected_bin_size = step * sampler
+
+    # we have not actually accounted, so the contents of bin_count
+    # are estimates
+    retv["bin_count_accurate"] = False
+    retv["bin_count"] = numpy.array( [expected_bin_size] * retv["num_bins"] )
     if retv["trace"]:
         print("Init:")
         print("Bin counts: " + str(retv["bin_count"]) )
@@ -75,10 +82,6 @@ def initializer( obs, med_idx_1, med_idx_2, lcl_idx=None, ucl_idx=None ):
     # will contain median, lcl, ucl. This allows us to provisionally
     # populate them during the first count, so that we might get our
     # result with only one count.
-
-    # We partitioned into bins that have `step` items each, so we
-    # expect the actual bins to have `step` * `sampler` items each.
-    expected_bin_size = step * sampler
 
     if lcl_idx is None: retv["lcl_bin"] = None
     else: retv["lcl_bin"] = int(lcl_idx // expected_bin_size)
@@ -257,7 +260,7 @@ def recount_bins( d ):
     (lcl_bin, med_bin, ucl_bin) = find_bins( d )
 
     if d["trace"]:
-        print("Second pass:")
+        print("recount_bins:")
         print("Bin counts: " + str(d["bin_count"]) )
         print("Bin boundaries: " + str(d["bin_boundary"]) )
         print("Median (idx: "+str(d["med_idx_1"])+","+str(d["med_idx_1"])+") is in " + str(d["med_bin"]) + ", lcl (idx: "+str(d["lcl_idx"])+") in " + str(d["lcl_bin"]) + ", ucl (idx: "+str(d["ucl_idx"])+") in " + str(d["ucl_bin"]))
@@ -266,78 +269,109 @@ def recount_bins( d ):
 
 
 
-def populate_bins( d, low, med, high ):
+def populate_bins( d ):
     (_,l) = d["obs"].shape
-    d["lo"] = numpy.full( d["bin_count"][low], numpy.inf )
-    d["me"] = numpy.full( d["bin_count"][med], numpy.inf )
-    d["hi"] = numpy.full( d["bin_count"][high],numpy.inf )
+    low = d["lcl_bin"]
+    med = d["med_bin"]
+    high= d["ucl_bin"]
+
+    if d["bin_count_accurate"]:
+         d["lo"] = numpy.full( d["bin_count"][low], numpy.inf )
+         d["me"] = numpy.full( d["bin_count"][med], numpy.inf )
+         d["hi"] = numpy.full( d["bin_count"][high],numpy.inf )
+    else:
+         d["lo"] = numpy.full( d["max_size"], numpy.inf )
+         d["me"] = numpy.full( d["max_size"][med], numpy.inf )
+         d["hi"] = numpy.full( d["max_size"][high],numpy.inf )
+
     lo_ptr = 0
     me_ptr = 0
     hi_ptr = 0
 
-    for i in range(1,l):
+    for i in range(len(d["bin_count"])): d["bin_count"][i]=0
+    
+    # This function tries to populate the bins while also maintaining bin counts.
+    # Since the first round is based on estimates, it might happen that
+    # (a) too much data falls into a bin and bin boundaries need to be re-done; or
+    # (b) that the wrong bins have been selected for population.
+    # If anything goes wrong, we stop populating but finish the counting, so that
+    # we can get it right the next time around.
+
+    still_good = True
+    
+    for i in range(0,l):
         for j in range(i+1,l):
             slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
-            bin = record_value( d, slope, 0 )
-            if bin == low:
+            bin = record_value( d, slope, 1 )
+
+            if still_good and (bin == low):
                 try:
                     d["lo"][lo_ptr] = slope
                 except:
-                    print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
-                           " med ("+str(med)+"): "+str(me_ptr)+\
-                           " high ("+str(high)+")"+str(hi_ptr) )
-                    raise
+                    # This bucket is full. Stop populating.
+                    still_good = False
+                    if d["trace"]:
+                        print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+                               " med ("+str(med)+"): "+str(me_ptr)+\
+                               " high ("+str(high)+")"+str(hi_ptr) )
                 lo_ptr += 1
                 if d["trace"] and False:
                     print( "Added "+str(slope)+" to low bin ("+str(bin)+"). New len: "+str(lo_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
-            if bin == med:
+
+            if still_good and (bin == med):
                 try:
                     d["me"][me_ptr] = slope
                 except:
+                    # This bucket is full. Stop populating.
+                    still_good = False
                     print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
                            " med ("+str(med)+"): "+str(me_ptr)+\
                            " high ("+str(high)+")"+str(hi_ptr) )
-                    raise
                 me_ptr += 1
                 if d["trace"] and False:
                     print( "Added "+str(slope)+" to med bin ("+str(bin)+"). New len: "+str(me_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
-            if bin == high:
+
+            if still_good and (bin == high):
                 try:
                     d["hi"][hi_ptr] = slope
                 except:
+                    # This bucket is full. Stop populating.
+                    still_good = False
                     print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
                            " med ("+str(med)+"): "+str(me_ptr)+\
                            " high ("+str(high)+")"+str(hi_ptr) )
-                    raise
                 hi_ptr += 1
                 if d["trace"] and False:
                     print( "Added "+str(slope)+" to high bin ("+str(bin)+"). New len: "+str(hi_ptr) )
                     if (d["bin_boundary"][bin-1] >= slope) or (d["bin_boundary"][bin] <= slope):
                         print("Wrong: "+str(d["bin_boundary"][bin-1])+","+str(d["bin_boundary"][bin]))
 
-    d["low_len"] = lo_ptr
-    d["med_len"] = me_ptr
-    d["high_len"]= hi_ptr
-    d["low_bin"] = low
-    d["med_bin"] = med
-    d["high_bin"]= high
+    if still_good:
 
-    # The arrays might not be full, but have been initialized
-    # with numpy.inf, so all unused elements will sort to the right
-    # of all used elements.
-    if d["trace"]: print( "Sorting" )
-    d["lo"].sort()
-    d["me"].sort()
-    d["hi"].sort()
-    
-    if d["trace"]:
-        print( "Populated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
-               " med ("+str(med)+"): "+str(me_ptr)+\
-               " high ("+str(high)+")"+str(hi_ptr) )
+        d["low_len"] = lo_ptr
+        d["med_len"] = me_ptr
+        d["high_len"]= hi_ptr
+        d["low_bin"] = low
+        d["med_bin"] = med
+        d["high_bin"]= high
+
+        # The arrays might not be full, but have been initialized
+        # with numpy.inf, so all unused elements will sort to the right
+        # of all used elements.
+        if d["trace"]: print( "Sorting" )
+        d["lo"].sort()
+        d["me"].sort()
+        d["hi"].sort()
+
+        if d["trace"]:
+            print( "Populated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+                   " med ("+str(med)+"): "+str(me_ptr)+\
+                   " high ("+str(high)+")"+str(hi_ptr) )
+
 
 
 
