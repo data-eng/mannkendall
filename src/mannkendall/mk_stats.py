@@ -12,6 +12,7 @@ This file contains the core statistical routines for the package.
 """
 
 # Import the required packages
+import heapq
 from datetime import datetime
 import copy
 import os
@@ -179,26 +180,53 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
     elif method == "brute-disk":
 
-        # store slopes in a file with prefix slopes_{uuid4}
-        slopes_file = tempfile.gettempdir() + os.sep + 'slopes_' + str(uuid.uuid4())
+        slopes_dir = os.path.join(tempfile.gettempdir(), 'slopes_' + str(uuid.uuid4()))
 
-        with open(slopes_file, 'w') as f:
+        os.makedirs(slopes_dir)
 
-            # compute the slopes
-            for i in range(0, rows-1):
-                for j in range(i + 1, rows):
+        tmp_array_l = 1000000
+        tmp_array_last_index = tmp_array_l - 1
 
-                    val = (obs[1, j] - obs[1, i]) / (obs[0, j] - obs[0, i])
-                    f.write(f'{val}\n')
+        tmp_array = np.empty(tmp_array_l)
+        tmp_array[:] = np.NaN
 
-        # file to store the sorted values
-        sorted_slopes_file = slopes_file + '_sorted'
+        tmp_files = []
 
-        with open(sorted_slopes_file, 'w') as f:
-            subprocess.run(['sort', '-n', slopes_file], stdout=f, check=True)
+        tmp_array_c = 0
 
-        # remove the slopes file to clean up space
-        os.remove(slopes_file)
+        # compute the slopes
+        for i in range(0, rows-1):
+            for j in range(i + 1, rows):
+
+                val = (obs[1, j] - obs[1, i]) / (obs[0, j] - obs[0, i])
+
+                tmp_array[tmp_array_c] = val
+
+                if tmp_array_c == tmp_array_last_index:
+                    tmp_array.sort()
+                    out_file = slopes_dir + os.sep + str(uuid.uuid4())
+                    np.savetxt(out_file, tmp_array)
+                    tmp_files.append(out_file)
+                    tmp_array = np.empty(tmp_array_l)
+                    tmp_array[:] = np.NaN
+                    tmp_array_c = 0
+                else:
+                    tmp_array_c += 1
+
+        if tmp_array_c != 0:  # write remaining values
+            tmp_array = tmp_array[~np.isnan(tmp_array)]
+            tmp_array.sort()
+            out_file = slopes_dir + os.sep + str(uuid.uuid4())
+            np.savetxt(out_file, tmp_array)
+            tmp_files.append(out_file)
+
+        sorted_slopes_file = os.path.join(slopes_dir, 'sorted')
+
+        with open(sorted_slopes_file, 'w') as f_out:
+            for line in heapq.merge(*[open(os.path.join(slopes_dir, f), 'r') for f in tmp_files], key=float):
+                f_out.write(line)
+
+        # TODO: remove the tmp files
 
         if l % 2 == 1:
             median_pos = l // 2
@@ -230,7 +258,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                 line_num += 1
 
         # remove the sorted file
-        os.remove(sorted_slopes_file)
+        #os.remove(sorted_slopes_file)
+        # TODO remove the temporary directory
 
     else:
         # Make an array with all the possible pairs.
