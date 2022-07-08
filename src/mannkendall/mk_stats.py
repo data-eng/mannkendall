@@ -218,18 +218,6 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             np.savetxt(out_file, tmp_array)
             tmp_files.append(out_file)
 
-        sorted_slopes_file = os.path.join(slopes_dir, 'sorted')
-
-        with ExitStack() as stack, open(sorted_slopes_file, 'w') as f_out:
-
-            files = [stack.enter_context(open(fname, 'r')) for fname in tmp_files]
-
-            for line in heapq.merge(*files, key=float):
-                f_out.write(line)
-
-        for f in tmp_files:
-            os.remove(f)
-
         if l % 2 == 1:
             median_pos = l // 2
             is_even = False
@@ -238,15 +226,19 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             median_pos_2 = median_pos + 1
             is_even = True
 
-        break_limit = max([median_pos, median_pos+1, m_1, m_2])
-
-        line_num = 0
-
         m_1_pos = int(m_1)
         m_2_pos = int(m_2)
 
-        with open(sorted_slopes_file) as f:
-            for line in f:
+        break_limit = max([median_pos, median_pos+1, m_1_pos, m_2_pos])
+
+        with ExitStack() as stack:
+
+            files = [stack.enter_context(open(fname, 'r')) for fname in tmp_files]
+
+            line_num = 0
+
+            for line in heapq.merge(*files, key=float):
+
                 if line_num > break_limit:
                     break
                 if line_num == m_1_pos:
@@ -259,8 +251,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                     ucl = float(line)
                 line_num += 1
 
-        # remove the sorted file
-        #os.remove(sorted_slopes_file)
+        for f in tmp_files:
+            os.remove(f)
         # TODO remove the temporary directory
 
     else:
