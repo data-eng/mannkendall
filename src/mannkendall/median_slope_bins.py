@@ -304,6 +304,9 @@ def populate_bins( d ):
         for j in range(i+1,l):
             slope = float(d["obs"][1][j]-d["obs"][1][i]) / float(d["obs"][0][j]-d["obs"][0][i])
             bin = record_value( d, slope, 1 )
+            if d["trace"] and False:
+                print("Bin counts")
+                print( d["bin_count"])
 
             if still_good and (bin == low):
                 try:
@@ -312,6 +315,7 @@ def populate_bins( d ):
                     # This bucket is full. Stop populating.
                     still_good = False
                     if d["trace"]:
+                        print("Bucket lcl ("+str(bin)+") is full!")
                         print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
                                " med ("+str(med)+"): "+str(me_ptr)+\
                                " high ("+str(high)+")"+str(hi_ptr) )
@@ -327,9 +331,11 @@ def populate_bins( d ):
                 except:
                     # This bucket is full. Stop populating.
                     still_good = False
-                    print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
-                           " med ("+str(med)+"): "+str(me_ptr)+\
-                           " high ("+str(high)+")"+str(hi_ptr) )
+                    if d["trace"]:
+                        print("Bucket med ("+str(bin)+") is full!")
+                        print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+                               " med ("+str(med)+"): "+str(me_ptr)+\
+                               " high ("+str(high)+")"+str(hi_ptr) )
                 me_ptr += 1
                 if d["trace"] and False:
                     print( "Added "+str(slope)+" to med bin ("+str(bin)+"). New len: "+str(me_ptr) )
@@ -342,9 +348,11 @@ def populate_bins( d ):
                 except:
                     # This bucket is full. Stop populating.
                     still_good = False
-                    print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
-                           " med ("+str(med)+"): "+str(me_ptr)+\
-                           " high ("+str(high)+")"+str(hi_ptr) )
+                    if d["trace"]:
+                        print("Bucket ucl ("+str(bin)+") is full!")
+                        print( "Polulated bins with: low ("+str(low)+"): "+str(lo_ptr)+\
+                               " med ("+str(med)+"): "+str(me_ptr)+\
+                               " high ("+str(high)+")"+str(hi_ptr) )
                 hi_ptr += 1
                 if d["trace"] and False:
                     print( "Added "+str(slope)+" to high bin ("+str(bin)+"). New len: "+str(hi_ptr) )
@@ -402,6 +410,12 @@ def get_percentiles( d ):
     if n < 2:
         assert False
 
+    if d["trace"]:
+        print("Indexes before starting:")
+        print("lcl: "+ str(idx_low_1) + ", " + str(idx_low_2))
+        print("med: "+ str(idx_med_1) + ", " + str(idx_med_2))
+        print("ucl: "+ str(idx_high_1) + ", " + str(idx_high_2))
+            
     for b in range(0,d["low_bin"]):
         idx_low_1  -= int( d["bin_count"][b] )
         idx_low_2  -= int( d["bin_count"][b] )
@@ -411,6 +425,12 @@ def get_percentiles( d ):
         idx_high_2 -= int( d["bin_count"][b] )
     value_low = (d["lo"][idx_low_1]+d["lo"][idx_low_2]) / 2
 
+    if d["trace"]:
+        print("Indexes after range(0,low_bin) == range(0,"+str(d["low_bin"])+")")
+        print("lcl: "+ str(idx_low_1) + ", " + str(idx_low_2))
+        print("med: "+ str(idx_med_1) + ", " + str(idx_med_2))
+        print("ucl: "+ str(idx_high_1) + ", " + str(idx_high_2))
+            
     for b in range(d["low_bin"],d["med_bin"]):
         idx_med_1  -= int( d["bin_count"][b] )
         idx_med_2  -= int( d["bin_count"][b] )
@@ -418,10 +438,22 @@ def get_percentiles( d ):
         idx_high_2 -= int( d["bin_count"][b] )
     value_med = (d["me"][idx_med_1]+d["me"][idx_med_2]) / 2
     
+    if d["trace"]:
+        print("Indexes after range(low_bin,med_bin) == range("+str(d["low_bin"])+","+str(d["med_bin"])+")")
+        print("lcl: "+ str(idx_low_1) + ", " + str(idx_low_2))
+        print("med: "+ str(idx_med_1) + ", " + str(idx_med_2))
+        print("ucl: "+ str(idx_high_1) + ", " + str(idx_high_2))
+            
     for b in range(d["med_bin"],d["high_bin"]):
         idx_high_1 -= int( d["bin_count"][b] )
         idx_high_2 -= int( d["bin_count"][b] )
     value_high = (d["hi"][idx_high_1]+d["hi"][idx_high_2]) / 2
         
+    if d["trace"]:
+        print("Indexes after range(med_bin,high_bin) == range("+str(d["med_bin"])+","+str(d["high_bin"])+")")
+        print("lcl: "+ str(idx_low_1) + ", " + str(idx_low_2))
+        print("med: "+ str(idx_med_1) + ", " + str(idx_med_2))
+        print("ucl: "+ str(idx_high_1) + ", " + str(idx_high_2))
+            
     return (value_low,value_med,value_high)
 
