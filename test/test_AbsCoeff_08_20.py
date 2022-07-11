@@ -94,6 +94,7 @@ def test_compute_mk_stat( basename ):
             print(good_results)
     except:
         good_results = None
+        new_results = {}
 
 
     for white_name in ["pw","pw_cor","tfpw_y","tfpw_ws","vctfpw"]:
@@ -105,51 +106,64 @@ def test_compute_mk_stat( basename ):
             w = numpy.loadtxt( filename )
         dd = numpy.stack( (ts,w), axis=0 )
         (result, s, vari, z) = mk.compute_mk_stat( dd, 0.2 )
-        
-        dp  = result["p"]    - good_results[white_name]["p"]
-        dss = result["ss"]   - good_results[white_name]["ss"]
-        dsl = result["slope"]- good_results[white_name]["slope"]
-        ducl= result["ucl"]  - good_results[white_name]["ucl"]
-        dlcl= result["lcl"]  - good_results[white_name]["lcl"]
-        ds  = s    - good_results[white_name]["s"]
-        dvar= vari - good_results[white_name]["vari"]
-        dz  = z    - good_results[white_name]["z"]
 
-        if report:
-            print((result, s, vari, z))
-        if report:
-            print("p error: "+str(dp)+", rel err: "+str(dp/good_results[white_name]["p"]))
+        if good_results is None:
+            new_results[white_name] = {}
+            new_results[white_name]["p"] = result["p"]
+            new_results[white_name]["ss"] = result["ss"]
+            new_results[white_name]["slope"] = result["slope"]
+            new_results[white_name]["ucl"] = result["ucl"]
+            new_results[white_name]["lcl"] = result["lcl"]
+            new_results[white_name]["s"] = s
+            new_results[white_name]["vari"] = vari
+            new_results[white_name]["z"] = z
+            with open( basename + ".results.json", "w" ) as fp:
+                json.dump( new_results, fp, indent=2 )
         else:
-            assert dp   < 1E-8
-        if report:
-            # Nor rel error, as this is often zero
-            print("ss error: "+str(dss))
-        else:
-            assert dss == 0
-        if report:
-            print("slope error: "+str(dsl)+", rel err: "+str(dsl/good_results[white_name]["slope"]))
-        else:
-            assert dsl  < 1E-8
-        if report:
-            print("ucl error: "+str(ducl)+", rel err: "+str(ducl/good_results[white_name]["ucl"]))
-        else:
-            assert ducl < 1E-8
-        if report:
-            print("lcl error: "+str(dlcl)+", rel err: "+str(dlcl/good_results[white_name]["lcl"]))
-        else:
-            assert dlcl < 1E-8
-        if report:
-            print("s error: "+str(ds)+", rel err: "+str(ds/good_results[white_name]["s"]))
-        else:
-            assert ds   < 1E-2
-        if report:
-            print("vari error: "+str(dvar)+", rel err: "+str(dvar/good_results[white_name]["vari"]))
-        else:
-            assert dvar < 1E-8
-        if report:
-            print("z error: "+str(dz)+", rel err: "+str(dz/good_results[white_name]["z"]))
-        else:
-            assert dz   < 1E-8
+            dp  = result["p"]    - good_results[white_name]["p"]
+            dss = result["ss"]   - good_results[white_name]["ss"]
+            dsl = result["slope"]- good_results[white_name]["slope"]
+            ducl= result["ucl"]  - good_results[white_name]["ucl"]
+            dlcl= result["lcl"]  - good_results[white_name]["lcl"]
+            ds  = s    - good_results[white_name]["s"]
+            dvar= vari - good_results[white_name]["vari"]
+            dz  = z    - good_results[white_name]["z"]
+
+            if report:
+                print((result, s, vari, z))
+            if report:
+                print("p error: "+str(dp)+", rel err: "+str(dp/good_results[white_name]["p"]))
+            else:
+                assert dp   < 1E-8
+            if report:
+                # Nor rel error, as this is often zero
+                print("ss error: "+str(dss))
+            else:
+                assert dss == 0
+            if report:
+                print("slope error: "+str(dsl)+", rel err: "+str(dsl/good_results[white_name]["slope"]))
+            else:
+                assert dsl  < 1E-8
+            if report:
+                print("ucl error: "+str(ducl)+", rel err: "+str(ducl/good_results[white_name]["ucl"]))
+            else:
+                assert ducl < 1E-8
+            if report:
+                print("lcl error: "+str(dlcl)+", rel err: "+str(dlcl/good_results[white_name]["lcl"]))
+            else:
+                assert dlcl < 1E-8
+            if report:
+                print("s error: "+str(ds)+", rel err: "+str(ds/good_results[white_name]["s"]))
+            else:
+                assert ds   < 1E-2
+            if report:
+                print("vari error: "+str(dvar)+", rel err: "+str(dvar/good_results[white_name]["vari"]))
+            else:
+                assert dvar < 1E-8
+            if report:
+                print("z error: "+str(dz)+", rel err: "+str(dz/good_results[white_name]["z"]))
+            else:
+                assert dz   < 1E-8
 
 
 report = True
