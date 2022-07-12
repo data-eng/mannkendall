@@ -78,7 +78,8 @@ def nanprewhite_arok(obs, alpha_ak=95):
     print( "XXX nanautocorr" )
     print(nlag)
     print(p_ind)
-    print(np.count_nonzero(~np.isnan(data_ar_removed_pw)))
+    print(np.count_nonzero(~np.isnan(obs)))
+    print(obs.shape)
     np.savetxt( "DEBUG_nanautocorr", obs )
     ### XXX END
     (x, _) = mkt.nanautocorr(obs, nlag, p_ind)
