@@ -186,6 +186,15 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     c_dict['tfpw_y'] = copy.copy(c_dict['vctfpw'])
     (ak_pw, data_ar_removed_pw, ss_pw) = nanprewhite_arok(data_detrend_pw, alpha_ak=alpha_ak)
 
+    ###XXX START
+    print( "XXX" )
+    print(ak_pw)
+    print(len(data_ar_removed_pw))
+    print(np.count_nonzero(~np.isnan(data_ar_removed_pw)))
+    print(ss_pw)
+    numpy.savetxt( "DEBUG_data_ar_removed_pw", data_ar_removed_pw )
+    ### XXX END
+
     # Compute TFPW correction following Yue et al., 2002
     # blended data
     if np.count_nonzero(~np.isnan(data_ar_removed_or)) > 0:
