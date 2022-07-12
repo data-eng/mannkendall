@@ -74,6 +74,13 @@ def nanprewhite_arok(obs, alpha_ak=95):
         p_ind = nlag - 1
 
     # Compute the autocorrelation
+    ###XXX START
+    print( "XXX nanautocorr" )
+    print(nlag)
+    print(p_ind)
+    print(np.count_nonzero(~np.isnan(data_ar_removed_pw)))
+    np.savetxt( "DEBUG_nanautocorr", obs )
+    ### XXX END
     (x, _) = mkt.nanautocorr(obs, nlag, p_ind)
 
     # Compute the confidence limits for the autocorrelation
@@ -184,16 +191,15 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     (c_dict['vctfpw'], data_ar_removed_or, c_dict['ss_vc']) = \
                                         nanprewhite_arok(data_detrend_or, alpha_ak=alpha_ak)
     c_dict['tfpw_y'] = copy.copy(c_dict['vctfpw'])
-    (ak_pw, data_ar_removed_pw, ss_pw) = nanprewhite_arok(data_detrend_pw, alpha_ak=alpha_ak)
-
     ###XXX START
-    print( "XXX" )
+    print( "XXX data_ar_removed_pw" )
     print(ak_pw)
     print(len(data_ar_removed_pw))
     print(np.count_nonzero(~np.isnan(data_ar_removed_pw)))
     print(ss_pw)
     np.savetxt( "DEBUG_data_ar_removed_pw", data_ar_removed_pw )
     ### XXX END
+    (ak_pw, data_ar_removed_pw, ss_pw) = nanprewhite_arok(data_detrend_pw, alpha_ak=alpha_ak)
 
     # Compute TFPW correction following Yue et al., 2002
     # blended data
