@@ -192,7 +192,7 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     print(len(data_ar_removed_pw))
     print(np.count_nonzero(~np.isnan(data_ar_removed_pw)))
     print(ss_pw)
-    numpy.savetxt( "DEBUG_data_ar_removed_pw", data_ar_removed_pw )
+    np.savetxt( "DEBUG_data_ar_removed_pw", data_ar_removed_pw )
     ### XXX END
 
     # Compute TFPW correction following Yue et al., 2002

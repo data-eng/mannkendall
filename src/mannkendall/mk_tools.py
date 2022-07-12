@@ -185,7 +185,7 @@ def nanautocorr(obs, nlags, r=0):
     out = []
 
     ###XXX START
-    numpy.savetxt( "DEBUG_mkt_nanautocorr_obs_corr", obs_corr )
+    np.savetxt( "DEBUG_mkt_nanautocorr_obs_corr", obs_corr )
     ### XXX END
 
     # Then, loop through the lags, and compute the perason r coefficient.
@@ -193,8 +193,8 @@ def nanautocorr(obs, nlags, r=0):
         obs_1 = obs_corr[ind:]
         obs_2 = obs_corr[:-ind]
         ###XXX START
-        numpy.savetxt( "DEBUG_mkt_nanautocorr_obs_1_ind_"+str(ind), obs1 )
-        numpy.savetxt( "DEBUG_mkt_nanautocorr_obs_2_ind_"+str(ind), obs2 )
+        np.savetxt( "DEBUG_mkt_nanautocorr_obs_1_ind_"+str(ind), obs1 )
+        np.savetxt( "DEBUG_mkt_nanautocorr_obs_2_ind_"+str(ind), obs2 )
         ### XXX END
         msk = ~np.isnan(obs_1) * ~np.isnan(obs_2)
 
