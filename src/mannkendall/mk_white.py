@@ -154,6 +154,7 @@ def prewhite( obs, resolution, alpha_ak=95 ):
 
     # Compute the autocorrelation
     (c_dict['pw'], data_ar_removed, c_dict['ss']) = nanprewhite_arok(obs[1,:], alpha_ak=alpha_ak)
+    np.savetxt( "DEBUG_mkw_data_ar_removed", data_ar_removed )
 
     # no statistically significant correlation ? Then get out now.
     if not((np.count_nonzero(~np.isnan(data_ar_removed)) > 0) & (c_dict['ss'] == alpha_ak) &
@@ -170,16 +171,20 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     # Else, compute the obs PW corrected
     data_pw['pw'] = copy.copy(data_ar_removed)
     data_pw['pw_cor'] = data_ar_removed/(1-c_dict['pw'])
-
+    np.savetxt( "DEBUG_mkw_pw", data_pw['pw'] )
+    np.savetxt( "DEBUG_mkw_pw_cor", data_pw['pw_cor'] )
     # data VCTFPW corrected
     # compute the trend slope of the PW data
     t = mkt.nb_tie(data_pw['pw_cor'], resolution)
+    np.savetxt( "DEBUG_mkw_t", t )
     pwcor_data = np.stack( (obs[0,:],data_pw['pw_cor']), axis=0 )
+    np.savetxt( "DEBUG_mkw_pwcor_data", pwcor_data )
     (_, n) = mks.s_test( pwcor_data )
     vari = mkt.kendall_var(obs[1,:], t, n)
-    np.savetxt( "DEBUG_pwcor_data_in", pwcor_data )
     print("mks.sen_slope( pwcor_data, vari)")
     print(vari)
+    print(n)
+    np.savetxt( "DEBUG_pwcor_data_in", pwcor_data )
     (b0_pw, _, _) = mks.sen_slope( pwcor_data, vari) # slope of the original data
     np.savetxt( "DEBUG_b0_pw", b0_pw )
     np.savetxt( "DEBUG_pwcor_data_out", pwcor_data )
