@@ -177,7 +177,12 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     pwcor_data = np.stack( (obs[0,:],data_pw['pw_cor']), axis=0 )
     (_, n) = mks.s_test( pwcor_data )
     vari = mkt.kendall_var(obs[1,:], t, n)
+    np.savetxt( "DEBUG_pwcor_data_in", pwcor_data )
+    print("mks.sen_slope( pwcor_data, vari)")
+    print(vari)
     (b0_pw, _, _) = mks.sen_slope( pwcor_data, vari) # slope of the original data
+    np.savetxt( "DEBUG_b0_pw", b0_pw )
+    np.savetxt( "DEBUG_pwcor_data_out", pwcor_data )
 
     t = mkt.nb_tie(obs[1,:], resolution)
     (_, n) = mks.s_test( obs )
@@ -196,7 +201,7 @@ def prewhite( obs, resolution, alpha_ak=95 ):
     print( "XXX data_detrend_pw" )
     print(len(data_detrend_pw))
     print(np.count_nonzero(~np.isnan(data_detrend_pw)))
-    np.savetxt( "DEBUG_data_ar_removed_pw", data_detrend_pw )
+    np.savetxt( "DEBUG_data_detrend_pw", data_detrend_pw )
     ### XXX END
     (ak_pw, data_ar_removed_pw, ss_pw) = nanprewhite_arok(data_detrend_pw, alpha_ak=alpha_ak)
     ###XXX START AFTER
