@@ -18,6 +18,8 @@ from mannkendall import mk_stats as mks
 from mannkendall import mk_white as mkw
 from mannkendall import mk_tools as mkt
 
+from time import time
+
 
 def test_prewhite( basename ):
     d = numpy.loadtxt( basename + ".csv" ).T
@@ -98,6 +100,7 @@ def test_compute_mk_stat( basename ):
 
 
     for white_name in ["pw","pw_cor","tfpw_y","tfpw_ws","vctfpw"]:
+        t0 = time()
         print("Checking MK over "+white_name)
         filename = basename + "." + white_name + ".csv"
         if redo_prewhite:
@@ -165,13 +168,17 @@ def test_compute_mk_stat( basename ):
             else:
                 assert dz   < 1E-8
 
+        print(f'method {white_name} took {int(time() - t0)} seconds to complete')
+
 
 report = True
 redo_prewhite = True
 
 
 if redo_prewhite:
+    t_prewhite = time()
     my_whites = test_prewhite( sys.argv[1] )
+    print(f'prewhite took {int(time() - t_prewhite)} seconds')
 else:
     my_whites = None
     
