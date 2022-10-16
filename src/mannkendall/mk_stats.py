@@ -20,8 +20,10 @@ import os
 import subprocess
 import tempfile
 import uuid
+from functools import reduce
 
 import numpy as np
+from pyspark.sql import SparkSession
 from scipy.interpolate import interp1d
 import scipy.stats
 
@@ -254,6 +256,67 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         for f in tmp_files:
             os.remove(f)
         # TODO remove the temporary directory
+
+    elif method == "spark":
+
+        spark = SparkSession.builder.appName('slopes').getOrCreate()
+        sc = spark.sparkContext
+
+        tmp_array_l = 400000000
+        tmp_array_last_index = tmp_array_l - 1
+
+        tmp_array = np.empty(tmp_array_l)
+
+        rdds = []
+
+        tmp_array_c = 0
+
+        # compute the slopes
+        for i in range(0, rows-1):
+            for j in range(i + 1, rows):
+
+                val = (obs[1, j] - obs[1, i]) / (obs[0, j] - obs[0, i])
+
+                tmp_array[tmp_array_c] = val
+
+                if tmp_array_c == tmp_array_last_index:
+                    rdds.append(sc.parallelize(tmp_array_c))
+                    tmp_array_c = 0
+                else:
+                    tmp_array_c += 1
+
+        if tmp_array_c != 0:  # write remaining values
+            tmp_array = tmp_array[:tmp_array_c]
+            rdds.append(sc.parallelize(tmp_array))
+
+        big_rdd = sc.union(rdds)
+
+        sorted_rdd = big_rdd.sortBy(lambda x: x[0]).zipWithIndex()
+
+        if l % 2 == 1:
+            median_pos = l // 2
+            is_even = False
+        else:
+            median_pos = (l - 1) // 2
+            median_pos_2 = median_pos + 1
+            is_even = True
+
+        m_1_pos = int(m_1)
+        m_2_pos = int(m_2)
+
+        if is_even:
+            percentiles = sorted_rdd.filter(lambda x: x[1] == m_1_pos or x[1] == median_pos or x[1] == median_pos_2 or x[1] == m_2_pos).collect()
+        else:
+            percentiles = sorted_rdd.filter(lambda x: x[1] == m_1_pos or x[1] == median_pos or x[1] == m_2_pos).collect()
+
+        # transform results in dict {index: float_value}
+        percentiles_dict = dict(map(lambda x: (x[1], float(x[0])), percentiles))
+
+        lcl = percentiles_dict.get(m_1_pos)
+        slope = percentiles_dict.get(median_pos)
+        if is_even:
+            slope = (slope + percentiles_dict.get(median_pos_2)) / 2
+        ucl = percentiles_dict.get(m_2_pos)
 
     else:
         # Make an array with all the possible pairs.
