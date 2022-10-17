@@ -261,6 +261,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
 
         spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
         sc = spark.sparkContext
+        sc.setLogLevel('DEBUG')
 
         tmp_array_l = 400000000
         tmp_array_last_index = tmp_array_l - 1
