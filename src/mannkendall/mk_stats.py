@@ -259,7 +259,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
 
     elif method == "spark":
 
-        spark = SparkSession.builder.appName('slopes').getOrCreate()
+        spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
         sc = spark.sparkContext
 
         tmp_array_l = 400000000
@@ -280,7 +280,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
                 tmp_array[tmp_array_c] = val
 
                 if tmp_array_c == tmp_array_last_index:
-                    rdds.append(sc.parallelize(tmp_array_c))
+                    rdds.append(sc.parallelize(tmp_array))
                     tmp_array_c = 0
                 else:
                     tmp_array_c += 1
