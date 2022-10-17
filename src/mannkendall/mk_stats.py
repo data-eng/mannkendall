@@ -63,7 +63,7 @@ def std_normal_var(s, var_s):
     # Deal with the other cases.
     return (s - np.sign(s))/var_s**0.5
 
-def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
+def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
     """ Compute Sen's slope.
 
     Specifically, this computes the median of the slopes for each interval:
@@ -304,10 +304,11 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         m_1_pos = int(m_1)
         m_2_pos = int(m_2)
 
+        positions = [m_1_pos, m_2_pos, median_pos]
         if is_even:
-            percentiles = sorted_rdd.filter(lambda x: x[1] == m_1_pos or x[1] == median_pos or x[1] == median_pos_2 or x[1] == m_2_pos).collect()
-        else:
-            percentiles = sorted_rdd.filter(lambda x: x[1] == m_1_pos or x[1] == median_pos or x[1] == m_2_pos).collect()
+            positions.append(median_pos_2)
+
+        percentiles = sorted_rdd.filter(lambda x: x[1] in positions).collect()
 
         # transform results in dict {index: float_value}
         percentiles_dict = dict(map(lambda x: (x[1], float(x[0])), percentiles))
@@ -317,6 +318,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
         if is_even:
             slope = (slope + percentiles_dict.get(median_pos_2)) / 2
         ucl = percentiles_dict.get(m_2_pos)
+
+        spark.stop()
 
     else:
         # Make an array with all the possible pairs.
