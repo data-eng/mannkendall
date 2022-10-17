@@ -309,10 +309,10 @@ def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
         if is_even:
             positions.append(median_pos_2)
 
-        percentiles = sorted_rdd.filter(lambda x: x[1] in positions).collect()
+        percentiles = sorted_rdd.filter(lambda x: x[1] in positions).map(lambda x: (x[1], x[0])).collect()
 
         # transform results in dict {index: float_value}
-        percentiles_dict = dict(map(lambda x: (x[1], float(x[0])), percentiles))
+        percentiles_dict = dict(percentiles)
 
         lcl = percentiles_dict.get(m_1_pos)
         slope = percentiles_dict.get(median_pos)
