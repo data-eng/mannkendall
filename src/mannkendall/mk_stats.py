@@ -292,7 +292,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='spark' ):
 
         big_rdd = sc.union(rdds)
 
-        sorted_rdd = big_rdd.sortBy(lambda x: x[0]).zipWithIndex()
+        sorted_rdd = big_rdd.sortBy(lambda x: x).zipWithIndex()
 
         if l % 2 == 1:
             median_pos = l // 2
