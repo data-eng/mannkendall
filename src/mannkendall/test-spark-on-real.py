@@ -1,8 +1,10 @@
+import sys
+
 import numpy as np
 from pyspark.sql import SparkSession
 import time
 
-obs = np.loadtxt('../../datasets/obs_daily')
+obs = np.loadtxt(sys.argv[1])
 
 obs = obs.T
 
@@ -37,9 +39,7 @@ m_1_pos = int(m_1)
 m_2_pos = int(m_2)
 
 #spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
-spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').getOrCreate()
-
-spark.conf.set("spark.executor.memory", '124g')
+spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').config('spark.executor.memory', '124g').getOrCreate()
 
 sc = spark.sparkContext
 
@@ -60,7 +60,7 @@ lcl = res.lookup(m_1_pos).pop()
 slope = res.lookup(median_pos).pop()
 if is_even:
     slope = (slope + res.lookup(median_pos_2).pop()) / 2
-ucl = res.lookup(m_2_pos)
+ucl = res.lookup(m_2_pos).pop()
 
 print(f'lcl={lcl}, slope={slope}, ucl={ucl}')
 print("--- %s seconds ---" % (time.time() - start_time))
