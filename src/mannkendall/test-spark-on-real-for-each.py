@@ -47,22 +47,28 @@ start_time = time.time()
 
 obs_rdd = sc.parallelize(obs)
 
+positions = [m_1_pos, m_2_pos, median_pos]
+if is_even:
+    positions.append(median_pos_2)
+
 res = obs_rdd.cartesian(obs_rdd) \
     .filter(lambda x: x[0][0] < x[1][0]) \
     .map(lambda x: (x[1][1] - x[0][1]) / (x[1][0] - x[0][0])) \
     .sortBy(lambda x: x) \
     .zipWithIndex() \
-    .map(lambda x: (x[1], x[0])) \
-    .sortByKey() \
-    .cache()
+    .filter(lambda x: x[1] in positions)\
+    .map(lambda x: (x[1], x[0]))
 
 print(res.toDebugString())
 
-lcl = res.lookup(m_1_pos).pop()
-slope = res.lookup(median_pos).pop()
+# transform results in dict {index: float_value}
+percentiles_dict = dict(res.collect())
+
+lcl = percentiles_dict.get(m_1_pos)
+slope = percentiles_dict.get(median_pos)
 if is_even:
-    slope = (slope + res.lookup(median_pos_2).pop()) / 2
-ucl = res.lookup(m_2_pos).pop()
+    slope = (slope + percentiles_dict.get(median_pos_2)) / 2
+ucl = percentiles_dict.get(m_2_pos)
 
 print(f'lcl={lcl}, slope={slope}, ucl={ucl}')
 print("--- %s seconds ---" % (time.time() - start_time))
