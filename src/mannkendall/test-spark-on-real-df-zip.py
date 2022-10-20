@@ -42,8 +42,8 @@ m_2_pos = int(m_2)
 
 pd_df = pd.DataFrame(obs, columns=['time', 'obs'])
 
-spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
-#spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').config('spark.executor.memory', '124g').getOrCreate()
+#spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
+spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').config('spark.executor.memory', '124g').getOrCreate()
 
 sc = spark.sparkContext
 
