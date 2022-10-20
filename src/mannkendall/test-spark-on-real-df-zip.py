@@ -42,8 +42,8 @@ m_2_pos = int(m_2)
 
 pd_df = pd.DataFrame(obs, columns=['time', 'obs'])
 
-#spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
-spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').config('spark.executor.memory', '124g').getOrCreate()
+spark = SparkSession.builder.appName('slopes').master('local[*]').getOrCreate()
+#spark = SparkSession.builder.appName('slopes').master('spark://spark-master:7077').config('spark.executor.memory', '124g').getOrCreate()
 
 sc = spark.sparkContext
 
@@ -53,7 +53,7 @@ spark_df = spark.createDataFrame(pd_df)
 
 spark_df.createOrReplaceTempView("arr")
 
-res = spark.sql('select ((b.obs - a.obs) / (b.time - a.time)) as slope from arr as a, arr as b where a.time < b.time')\
+res = spark.sql('select ((b.obs - a.obs) / (b.time - a.time)) as slope from arr as a, arr as b where a.time < b.time order by slope')\
     .rdd\
     .zipWithIndex()\
     .filter(lambda x: x[1] in positions)\
