@@ -185,7 +185,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
         os.makedirs(slopes_dir)
 
-        tmp_array_l = 400000000
+        tmp_array_l = int(os.getenv('TMP_ARRAY_L', 400_000_000))
         tmp_array_last_index = tmp_array_l - 1
 
         tmp_array = np.empty(tmp_array_l)
