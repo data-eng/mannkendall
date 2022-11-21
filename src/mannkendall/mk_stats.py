@@ -76,7 +76,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
         confidence (float, optional): the desired confidence limit, in %. Defaults to 90.
 
-        method (string, opt): Method for calculating slope. One of:
+    Return:
+        (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
+
+    Note:
+        The slopes are returned in units of 1/s.
+    """
+
+    """
+    method (string, opt): Method for calculating slope. One of:
                               "brute" (default): builds the n(n-1)/2 array of slopes and sorts
                               it to find the median and the confidence limits.
                               "brute-sparse": same as brute, but computes confidence limits
@@ -92,13 +100,8 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                               writes the computed values in a file under TMPDIR and sorts the file using bash sort
                               "brute-sparse": same as brute, but also computes confidence limits
                               with an interpolation. When datapoints are few.
-
-    Return:
-        (float, float, float): Sen's slope, lower confidence limit, upper confidence limit.
-
-    Note:
-        The slopes are returned in units of 1/s.
     """
+    method = os.getenv('SEN_SLOPE_METHOD', 'brute')
 
     # Start with some sanity checks
     if not isinstance(alpha_cl, (float, int)):
@@ -117,7 +120,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
     good2 = np.array([ obs[0][good_values], obs[1][good_values] ])
     obs = copy.copy(good2)
     obs[0] = mkt.days_to_s(obs[0])
-    
+
     (cols,rows) = obs.shape
     if cols != 2:
         raise Exception( "There must be two columns in obs" )
@@ -177,7 +180,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                     (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
-        
+
 
     elif method == "brute-disk":
 
