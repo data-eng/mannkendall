@@ -213,7 +213,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             cursor = conn.cursor()
 
             # execute a statement
-            cursor.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION')
+            cursor.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION)')
 
             # display the result
             db_version = cursor.fetchone()
