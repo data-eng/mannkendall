@@ -29,6 +29,9 @@ import scipy.stats
 from . import mk_tools as mkt
 from . import median_slope_bins as bins
 
+from configparser import ConfigParser
+import psycopg2
+
 
 def std_normal_var(s, var_s):
     """ Compute the normal standard variable Z.
@@ -180,6 +183,56 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
                     (low_bin, mid_bin, high_bin) = bins.recount_bins( d )
         bins.populate_bins( d )
         (lcl,slope,ucl) = bins.get_percentiles( d )
+
+
+    elif method == "postgres":
+
+        # get the database.ini filepath through the DATABASE_INI env variable
+        filename = os.getenv('DATABASE_INI', 'database.ini')
+
+        # create a parser
+        parser = ConfigParser()
+        # read config file
+        parser.read(filename)
+
+        # get section, default to postgresql
+        db_params = {}
+        if parser.has_section('postgresql'):
+            params = parser.items('postgresql')
+            for param in params:
+                db_params[param[0]] = param[1]
+        else:
+            raise Exception('Section {0} not found in the {1} file'.format('postgresql', filename))
+
+        conn = None
+
+        try:
+
+            # connect to the PostgreSQL server
+            conn = psycopg2.connect(**db_params)
+
+            # create a cursor
+            cur = conn.cursor()
+
+            # execute a statement
+            cur.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION')
+
+            # display the result
+            db_version = cur.fetchone()
+            print(db_version)
+
+            # close the communication with the PostgreSQL
+            cur.close()
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Database connection closed.')
+
+
 
 
     elif method == "brute-disk":
