@@ -216,7 +216,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
             # insert obs
             for i in range(0, rows-1):
-                cursor.execute(f"INSERT INTO temp_obs(time, obs) VALUES ({obs[0][0]}, {obs[1][0]})")
+                cursor.execute(f"INSERT INTO temp_obs(time, obs) VALUES ({obs[0][i]}, {obs[1][i]})")
 
             # display the result
             #db_version = cursor.fetchone()
