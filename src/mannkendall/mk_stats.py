@@ -206,8 +206,7 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
             # connect to the PostgreSQL server
             conn = psycopg2.connect(**db_connect_kwargs)
-            conn.set_session(autocommit=True)
-
+            conn.set_session()
 
             # create a cursor
             cursor = conn.cursor()
@@ -215,9 +214,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             # execute a statement
             cursor.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION)')
 
+            # insert obs
+            for i in range(0, rows-1):
+                cursor.execute(f"INSERT INTO temp_obs(time, obs) VALUES ({obs[0][0]}, {obs[1][0]})")
+
+            cursor.commit()
+
             # display the result
-            db_version = cursor.fetchone()
-            print(db_version)
+            #db_version = cursor.fetchone()
+            #print(db_version)
 
             # close the communication with the PostgreSQL
             cursor.close()
@@ -229,8 +234,6 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             if conn is not None:
                 conn.close()
                 print('Database connection closed.')
-
-
 
 
     elif method == "brute-disk":
