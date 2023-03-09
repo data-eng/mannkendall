@@ -218,11 +218,15 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             for i in range(0, rows-1):
                 cursor.execute(f"INSERT INTO temp_obs(time, obs) VALUES ({obs[0][i]}, {obs[1][i]})")
 
-            # display the result
-            #db_version = cursor.fetchone()
-            #print(db_version)
+            # find percentiles
+            cursor.execute("select percentile_cont(ARRAY[0.25, 0.5, 0.75]) within group (order by slopes.slope) from (select ((b.obs - a.obs) / (b.time - a.time)) as slope from temp_obs as a, temp_obs as b where a.time < b.time) as slopes")
 
-            # close the communication with the PostgreSQL
+            result = cursor.fetchone()
+
+            lcl = result[0][0]
+            slope = result[0][1]
+            ucl = result[0][2]
+
             cursor.close()
 
         except (Exception, psycopg2.DatabaseError) as error:
