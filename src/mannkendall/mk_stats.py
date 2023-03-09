@@ -29,7 +29,6 @@ import scipy.stats
 from . import mk_tools as mkt
 from . import median_slope_bins as bins
 
-from configparser import ConfigParser
 import psycopg2
 
 
@@ -187,42 +186,41 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
 
     elif method == "postgres":
 
-        # get the database.ini filepath through the DATABASE_INI env variable
-        filename = os.getenv('DATABASE_INI', 'database.ini')
+        user = os.getenv('POSTGRES_USER')
+        password = os.getenv('POSTGRES_PASS')
+        host = os.getenv('POSTGRES_HOST')
+        port = os.getenv('POSTGRES_PORT')
+        dbname = os.getenv('POSTGRES_DB')
 
-        # create a parser
-        parser = ConfigParser()
-        # read config file
-        parser.read(filename)
-
-        # get section, default to postgresql
-        db_params = {}
-        if parser.has_section('postgresql'):
-            params = parser.items('postgresql')
-            for param in params:
-                db_params[param[0]] = param[1]
-        else:
-            raise Exception('Section {0} not found in the {1} file'.format('postgresql', filename))
+        db_connect_kwargs = {
+            'dbname': dbname,
+            'user': user,
+            'password': password,
+            'host': host,
+            'port': port
+        }
 
         conn = None
 
         try:
 
             # connect to the PostgreSQL server
-            conn = psycopg2.connect(**db_params)
+            conn = psycopg2.connect(**db_connect_kwargs)
+            conn.set_session(autocommit=True)
+
 
             # create a cursor
-            cur = conn.cursor()
+            cursor = conn.cursor()
 
             # execute a statement
-            cur.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION')
+            cursor.execute('CREATE TEMPORARY TABLE temp_obs(time DOUBLE PRECISION, obs DOUBLE PRECISION')
 
             # display the result
-            db_version = cur.fetchone()
+            db_version = cursor.fetchone()
             print(db_version)
 
             # close the communication with the PostgreSQL
-            cur.close()
+            cursor.close()
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
