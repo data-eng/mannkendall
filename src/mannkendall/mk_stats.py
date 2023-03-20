@@ -218,8 +218,11 @@ def sen_slope( obs, k_var, alpha_cl=90., method='brute-disk' ):
             for i in range(0, rows-1):
                 cursor.execute(f"INSERT INTO temp_obs(time, obs) VALUES ({obs[0][i]}, {obs[1][i]})")
 
+            m_1_perc = round(m_1/rows, 2)
+            m_2_perc = round(m_2/rows, 2)
+
             # find percentiles
-            cursor.execute("select percentile_cont(ARRAY[0.25, 0.5, 0.75]) within group (order by slopes.slope) from (select ((b.obs - a.obs) / (b.time - a.time)) as slope from temp_obs as a, temp_obs as b where a.time < b.time) as slopes")
+            cursor.execute(f"select percentile_cont(ARRAY[{m_1_perc}, 0.5, {m_2_perc}]) within group (order by slopes.slope) from (select ((b.obs - a.obs) / (b.time - a.time)) as slope from temp_obs as a, temp_obs as b where a.time < b.time) as slopes")
 
             result = cursor.fetchone()
 
